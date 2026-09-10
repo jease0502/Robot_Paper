@@ -99,7 +99,7 @@ dissipation can be safely resolved post-hoc on frozen checkpoints without
 retraining. We demonstrate that electrical copper loss decomposes in quadrature
 into a steady-state posture term and a dynamic ripple term, showing that
 jitter-induced heating is strictly governed by joint-specific loading rather than
-intrinsic policy traits. On a Unitree Go1, an analytical crossover at $3.2\Nm$
+intrinsic policy traits. On a Unitree Go1 a load crossover at $3.2\Nm$
 separates posture-dominated stance joints from jitter-dominated hip joints. We
 show that zero-order-hold discretization harmonics contribute negligibly (1.6\%),
 with discretionary losses concentrated in 5--25\,Hz in-band jitter. To bypass the
@@ -148,8 +148,9 @@ retraining.
 \item \textbf{Spectral and quadrature heat decomposition.} We formulate an exact
 Parseval-based decomposition isolating copper loss into static posture, gait
 fundamentals (0--5\,Hz), in-band jitter (5--25\,Hz), and zero-order-hold (ZOH)
-harmonics ($>25$\,Hz). We identify an analytical crossover at $\bar{\tau} \approx
-\sqrt{\mathrm{Var}(\tau)} \approx 3.2\Nm$ on a Unitree Go1, revealing that ZOH
+harmonics ($>25$\,Hz). The quadrature form gives a per-joint rule,
+$\bar{\tau}_j < \sqrt{\mathrm{Var}(\tau_j)}$, which on the measured Go1 statistics
+separates eight filterable joints from four load-bearing ones, revealing that ZOH
 harmonics contribute merely 1.6\% and establishing which joints are physically
 amenable to filtering.
 \item \textbf{Closed-loop latency failure boundary.} We quantify the divergence
@@ -252,8 +253,10 @@ The two are different cuts and are not interchangeable.
 \subsection{Thermal Loss Proxy}
 
 Motor thermal dissipation is quantified via
-$\mathcal{H} = \frac{1}{T}\int_0^T \tau^2\,\mathrm{d}t$, proportional to winding
-copper loss $I_{\mathrm{rms}}^2 R$ under a constant torque sensitivity $K_t$.
+$\mathcal{H} = \sum_j \frac{1}{T}\int_0^T \tau_j^2\,\mathrm{d}t$, proportional to
+winding copper loss $I_{\mathrm{rms}}^2 R$ under a constant torque sensitivity
+$K_t$. Absolute values are summed over the twelve joints; the single-joint
+experiments drop the sum.
 Quadratic torque evaluation is physically validated by stator thermal dynamics: on
 calibrated brushless actuators, the winding thermal time constant is 3.12\,s
 against 777\,s for the motor housing---a disparity factor of 249~\cite{maxon}.
@@ -266,7 +269,7 @@ energy-efficient motor control~\cite{energymotor}.
 
 \subsection{Effect Size}
 
-Paired comparisons between schemes are reported with Cliff's $\delta$, a
+Comparisons between schemes are reported with Cliff's $\delta$, a
 non-parametric ordinal effect size that makes no distributional
 assumption~\cite{cliff}.
 
@@ -282,8 +285,8 @@ Go1~\cite{wtw}.
 representative of the Unitree Go1~\cite{playground} ($k_p = 35$, damping 0.5, rotor inertia
 0.005\,kg$\cdot$m$^2$, $f_n = 13.3$\,Hz, $\zeta = 0.60$, $-3$\,dB bandwidth
 15.3\,Hz) is excited by a 2\,Hz sinusoidal command injected with bandpass noise
-above bandwidth. Commands are sampled at 50\,Hz, held via ZOH to 500\,Hz, and
-integrated at 5\,kHz. Static load torques are swept from 0 to $20\Nm$.
+above bandwidth. Commands are sampled at 50\,Hz, held to the 5\,kHz integrator,
+which evaluates the PD law continuously rather than at a discrete drive rate. Static load torques are swept from 0 to $20\Nm$.
 
 \textbf{E2 (recorded trajectories, open loop).} Trajectories logged from seven Go1
 policies across reward ablations are replayed through the single-joint model under
@@ -370,16 +373,26 @@ a realistic steady load flattens it almost completely.}
 
 At $\rho = 0.20$, an unloaded joint dissipates 10.9 times the heat of an
 uncorrupted command while altering joint motion by only 1.8\%. In contrast, a
-joint supporting a $20\Nm$ static load exhibits merely a 2\% thermal increase under
-the same command roughness. Under unloaded conditions, dissipation follows
-$\mathcal{H} = \mathcal{H}_0 + \kappa\,\rho/(1-\rho)$ with $\kappa = 38.4$ and a maximum residual of 0.45\%. The crossover where posture
-loss equals ripple loss, $\bar{\tau}^2 = \mathrm{Var}(\tau)$, emerges at $3.2\Nm$.
+joint supporting a $20\Nm$ static load exhibits merely a 2\% thermal increase
+under the same command roughness. The robot's own knees sit lower, at
+5.88--6.88$\Nm$, between the sweep's 5$\Nm$ row at ${+}36\%$ and its 10$\Nm$ row
+at ${+}9\%$; the $20\Nm$ column bounds the trend rather than describing a Go1
+joint. Under unloaded conditions, dissipation follows
+$\mathcal{H} = \mathcal{H}_0 + \kappa\,\rho/(1-\rho)$ with $\kappa = 38.4$ and a
+maximum residual of 0.45\%. Posture overtakes ripple where
+$\bar{\tau}^2 = \mathrm{Var}(\tau)$. That balance point is not a constant of the
+robot: in this sweep it is $\sqrt{\mathrm{Var}(\tau)}$, which is set by the
+injected out-of-band power and equals $2.3\Nm$ at $\rho = 0.10$ and $3.2\Nm$ at
+$\rho = 0.20$. We use the latter as the scalar threshold.
 
 On the Unitree Go1, measured mean absolute joint torques $|\bar{\tau}|$ average
 1.24--1.48$\Nm$ for hip abduction, 2.00--2.59$\Nm$ for thighs, and
 5.88--6.88$\Nm$ for calves. Eight of the twelve joints operate below the $3.2\Nm$
-crossover, while the four knee actuators operate well above it
-(Fig.~\ref{fig:crossover}). Motor selection for quasi-direct-drive joints is
+threshold, while the four knee actuators operate well above it
+(Fig.~\ref{fig:crossover}). The threshold is a convenience, not a dependency:
+applying the per-joint form $\bar{\tau}_j < \sqrt{\mathrm{Var}(\tau_j)}$ to each
+joint's own measured statistics selects the same eight joints, so the mask does
+not inherit the value of $\rho$ chosen in E1. Motor selection for quasi-direct-drive joints is
 argued on the same footing, by the torque operating point rather than by peak
 rating~\cite{motorselect}. Consequently, posture demands dominate knee
 dissipation, whereas jitter drives overheating in lightly loaded joints.
@@ -389,8 +402,10 @@ dissipation, whereas jitter drives overheating in lightly loaded joints.
 \includegraphics[width=0.88\columnwidth]{figs/fig2-crossover.pdf}
 \caption{The quadrature crossover. Which term dominates is a property of the
 joint, not of the policy. The curves are the definition
-$r = \mathrm{Var}/(\bar{\tau}^2+\mathrm{Var})$, not a fit; the joint placements and
-reachable shares are measured.}
+$r = \mathrm{Var}/(\bar{\tau}^2+\mathrm{Var})$, not a fit, drawn at the single
+$\mathrm{Var}(\tau)$ of the E1 sweep at $\rho = 0.20$; each Go1 joint has its own
+variance, so the curve locates the regimes rather than any one joint. The joint
+placements and reachable shares are measured.}
 \label{fig:crossover}
 \end{figure}
 
@@ -490,7 +505,10 @@ line: there is nothing to win.}
 Zero-phase filtering---non-causal, because the record is run through the filter
 forwards and then backwards~\cite{gustafsson}---achieves a 46\% thermal reduction
 while preserving 99.5\% of intended trajectory motion. However, a causal implementation of the identical
-filter preserves only 74.5\% of intended motion due entirely to phase lag.
+filter preserves only 74.5\% of intended motion due entirely to phase lag. Those
+two rows are matched. The predictive row is not: it also carries first-order-hold
+upsampling, which the Butterworth and zero-phase rows do not, and the
+linear-interpolation row isolates that effect at 0.696.
 Out-of-sample \emph{open-loop} command prediction accuracy reaches $R^2 = 0.679$
 on the full-reward policy, declining to 0.385 without effort terms, and collapsing
 to 0.059 on an unregularized checkpoint. A separate predictor fitted for the
@@ -739,8 +757,9 @@ reachable share means the effort belongs in posture or reward rather than in a
 filter. \emph{Do not buy zero phase with delay}: latency is taken out of the
 policy's own phase margin, and the resulting falls appear only at the top of the
 speed range, which is therefore where a candidate filter must be evaluated.
-\emph{Gate by load}: restrict smoothing to joints below $\bar{\tau} \approx
-\sqrt{\mathrm{Var}(\tau)}$, preserving tracking on stance joints while removing
+\emph{Gate by load}: filter joint $j$ only where
+$\bar{\tau}_j < \sqrt{\mathrm{Var}(\tau_j)}$, which we implement as a fixed
+$3.2\Nm$ threshold on mean $|\tau|$, preserving tracking on stance joints while removing
 jitter from unloaded ones. \emph{Prefer effort regularization to
 \texttt{action\_rate}}: ablating the torque and energy penalties raises the step
 transient by $74\% \pm 23$, while ablating \texttt{action\_rate} produces no
@@ -788,7 +807,7 @@ gap addressed here.
 Actuator thermal overload in learned legged locomotion decomposes into
 steady-state posture torque and dynamic command ripple. Because these components
 add in quadrature, command filtering provides thermal relief only on lightly
-loaded joints operating below the analytical crossover. In closed-loop execution,
+loaded joints operating below that crossover. In closed-loop execution,
 filter phase lag directly degrades stability margins at operating speeds.
 Consequently, causal predictive filtering with load-dependent gating provides a
 reliable framework to recover actuator thermal margins on frozen checkpoints
