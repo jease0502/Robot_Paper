@@ -1,0 +1,11 @@
+# Table 2 body, 5 seeds, mean +/- sd across seeds.
+# The last column is the paired change against each seed's own
+# baseline. 'ns' marks an interval that straddles zero.
+
+Full reward baseline & 2.46 $\pm$ 0.12 & --- & 0.105 $\pm$ 0.068 \\
+No orientation & 2.53 $\pm$ 0.13 & +3\% $\pm$ 7\,\textsuperscript{ns} & 0.119 $\pm$ 0.110 \\
+No feet air time & 2.48 $\pm$ 0.08 & +1\% $\pm$ 7\,\textsuperscript{ns} & 0.113 $\pm$ 0.061 \\
+No \texttt{action\_rate} & 2.57 $\pm$ 0.11 & +5\% $\pm$ 6\,\textsuperscript{ns} & 0.105 $\pm$ 0.052 \\
+No gait terms & 2.81 $\pm$ 0.18 & +15\% $\pm$ 8 & 0.202 $\pm$ 0.044 \\
+No torques + energy & 4.26 $\pm$ 0.41 & +74\% $\pm$ 23 & 0.332 $\pm$ 0.150 \\
+Task terms only & 5.64 $\pm$ 0.25 & +130\% $\pm$ 18 & 0.886 $\pm$ 0.030 \\

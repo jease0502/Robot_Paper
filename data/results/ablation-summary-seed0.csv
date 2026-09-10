@@ -1,0 +1,8 @@
+variant,final_reward,best_reward,steps_to_threshold,wall_min
+baseline,25.955,25.955,49152000,6.6
+no_action_rate,26.553,26.553,57344000,6.6
+no_torques_energy,29.717,29.717,24576000,6.5
+no_feet_air_time,26.763,26.763,49152000,6.5
+no_orientation,26.553,26.553,49152000,6.7
+no_gait_terms,33.578,33.578,16384000,6.5
+task_only,26.698,26.698,16384000,6.5

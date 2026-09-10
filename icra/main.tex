@@ -385,27 +385,32 @@ reachable shares are measured.}
 \subsection{Effort Terms Govern Jitter; Action Rate Does Not}
 
 Command-side statistics were evaluated across ablated Go1 policy checkpoints
-(single-seed, 8\,s rollouts). Of the seven variants trained,
+(five seeds per variant, 8\,s rollouts). Of the seven variants trained,
 Table~\ref{tab:ablation} reports the five most representative.
 
 \begin{table}[!tb]
-\caption{Command-side spectral properties across reward ablations (E2).
-$\rho_{>5\,\mathrm{Hz}}$ is the coarse 5\,Hz cut, not the $-3$\,dB-bandwidth
-$\rho$.}
+\caption{Command-side thermal statistics across reward ablations (E2), five seeds.
+$\tau_{\mathrm{step}}$ is mean $\pm$ s.d.\ across seeds; the last column is the
+change against that seed's own baseline, averaged. $^{\textrm{ns}}$ marks an
+interval that straddles zero. The spectral centroid and
+$\rho_{>5\,\mathrm{Hz}}$ are omitted here for column width and are reported in
+the extended version.}
 \label{tab:ablation}
 \centering
 \footnotesize
 \setlength{\tabcolsep}{3pt}
-\begin{tabular}{lrrrr}
+\begin{tabular}{lrrr}
 \toprule
-Policy variant & $\Delta q_{\mathrm{rms}}$ & $\tau_{\mathrm{step}}$ RMS & Centroid & $\rho_{>5\,\mathrm{Hz}}$ \\
- & (rad) & ($\mathrm{N}\!\cdot\!\mathrm{m}$) & (Hz) & \\
+Policy variant & $\Delta q_{\mathrm{rms}}$ & $\tau_{\mathrm{step}}$ RMS & vs.\ own \\
+ & (rad) & ($\mathrm{N}\!\cdot\!\mathrm{m}$) & baseline \\
 \midrule
-Full reward           & 0.0668 & 2.34 & 3.29  & 0.051 \\
-No \texttt{act\_rate} & 0.0723 & \textbf{2.53} ({+}8\%) & 3.43 & 0.119 \\
-No gait terms         & 0.0747 & 2.62 ({+}12\%) & 4.98 & 0.146 \\
-No torque+energy & 0.1267 & \textbf{4.43} ({+}89\%) & 5.44 & 0.363 \\
-Task terms only       & 0.1586 & 5.55 ({+}137\%) & 10.44 & 0.898 \\
+Full reward           & 0.0702 & 2.46 $\pm$ 0.12 & --- \\
+No orientation        & 0.0722 & 2.53 $\pm$ 0.13 & {+}3\%\,$\pm$\,7$^{\textrm{ns}}$ \\
+No feet air time      & 0.0708 & 2.48 $\pm$ 0.08 & {+}1\%\,$\pm$\,7$^{\textrm{ns}}$ \\
+No \texttt{act\_rate} & 0.0734 & 2.57 $\pm$ 0.11 & \textbf{{+}5\%\,$\pm$\,6$^{\textrm{ns}}$} \\
+No gait terms         & 0.0803 & 2.81 $\pm$ 0.18 & {+}15\%\,$\pm$\,8 \\
+No torque+energy      & 0.1216 & \textbf{4.26 $\pm$ 0.41} & \textbf{{+}74\%\,$\pm$\,23} \\
+Task terms only       & 0.1612 & 5.64 $\pm$ 0.25 & {+}130\%\,$\pm$\,18 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -422,11 +427,17 @@ the rule below the axes marks instead.}
 \end{figure*}
 \fi
 
-Ablating the standard \texttt{action\_rate} penalty increases step transients by
-only 8\%. Conversely, eliminating joint torque and energy regularizations inflates
-step transients by 89\%. Direct effort minimization, rather than discrete action
-smoothing, serves as the primary regularizer of command-side thermal load. The
-same lever has been made adaptive to drive gait transition and locomotion
+Ablating the standard \texttt{action\_rate} penalty produces no effect we can
+measure: the paired change is ${+}5\% \pm 6$, an interval containing zero, and in
+one seed of five the ablated policy is \emph{smoother} than its own baseline. An
+earlier single-seed draft reported ${+}8\%$; that was one draw from this
+distribution. Conversely, eliminating joint torque and energy regularizations
+inflates step transients by ${+}74\% \pm 23$, positive in every seed. The spread
+is not an artefact of unstable training: final evaluation return is tight across
+seeds for every variant (baseline $25.8 \pm 0.6$, task-only $26.3 \pm 0.3$), so
+all 35 runs learned to walk. Direct effort minimization, rather than discrete
+action smoothing, serves as the primary regularizer of command-side thermal load.
+The same lever has been made adaptive to drive gait transition and locomotion
 efficiency~\cite{energyreg}.
 
 \subsection{Open-Loop Filtering and the Cost of Phase Lag}
@@ -775,7 +786,8 @@ so a lumped-parameter or learned thermal network would be required to turn the
 proxy into a winding temperature~\cite{tnn};
 single-joint sweeps omit contact dynamics; and every result is measured on flat
 terrain on one quadruped. The 5\,Hz gait split is hand-chosen and has not been
-swept, and the reward ablations are single-seed over 8\,s with no confidence
+swept. The reward ablations now carry five seeds and paired intervals, while
+every other experiment here remains single-seed, with no confidence
 intervals. Extending the decomposition to a humanoid such as the Unitree G1, and
 confirming the $3.2\Nm$ crossover on a dynamometer, are the essential next steps.
 

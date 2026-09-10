@@ -261,9 +261,10 @@ induces up to a 100% fall rate at operating speed (1.0 m/s).</li>
 <li><b>Retraining-free predictive gated filtering.</b> We propose an AR(8) predictive compensator
 paired with joint-load gating that eliminates phase lag, safely recovering 47&ndash;54% of the
 reachable thermal budget across diverse checkpoints without retraining or stability loss.</li>
-<li><b>Regularization diagnostics.</b> We demonstrate that conventional <code>action_rate</code>
-penalties exert minimal authority over command-side thermal load (+8% step transient when ablated),
-whereas direct effort penalties dictate the accessible thermal budget (+89%).</li>
+<li><b>Regularization diagnostics.</b> Over five training seeds we show that conventional
+<code>action_rate</code> penalties exert no measurable authority over command-side thermal load:
+ablating them moves step transients by +5% &plusmn; 6, an interval that straddles zero. Ablating
+direct effort penalties moves them by +74% &plusmn; 23, positive in every seed.</li>
 </ol>
 
 <h2><span class="secno">2.</span>Actuation Pipeline and Problem Formulation</h2>
@@ -440,22 +441,26 @@ knee dissipation, whereas jitter drives overheating in lightly loaded joints.</p
 
 <h3><span class="secno">5.2</span>Effort terms govern jitter; action rate does not</h3>
 
-<p class="noind">Command-side statistics were evaluated across ablated Go1 policy checkpoints
-(single-seed, 8 s rollouts). Table 2 reports five representative variants of the seven trained;
-</p>
+<p class="noind">Command-side statistics were evaluated across all seven ablated Go1 variants, each
+trained from five random seeds at 60M timesteps, on 8 s rollouts (Appendix A.2). Table 2 reports
+mean &plusmn; standard deviation across seeds. The final column is the change against <i>that seed's
+own baseline</i>, averaged across seeds; pairing within a seed is what makes an interval on a relative
+change meaningful, because the baseline itself varies by &plusmn;0.12 N&middot;m between seeds.</p>
 
 <div class="tbl">
   <p class="lab">Table 2</p>
-  <p class="ttl">Command-side spectral properties across reward ablations (E2). \(\rho_{>5\,\mathrm{Hz}}\) is the coarse 5 Hz cut of Section 3.2, not the \(-3\) dB-bandwidth \(\rho\).</p>
+  <p class="ttl">Command-side spectral properties across reward ablations (E2), five seeds, mean &plusmn; s.d. \(\rho_{>5\,\mathrm{Hz}}\) is the coarse 5 Hz cut of Section 3.2, not the \(-3\) dB-bandwidth \(\rho\). <sup>ns</sup> marks a paired interval that straddles zero.</p>
   <div class="tw">
   <table>
-    <thead><tr><th>Policy variant</th><th>\(\Delta q_{\text{rms}}\) (rad)</th><th>\(\tau_{\text{step}}\) RMS (N&middot;m)</th><th>Centroid (Hz)</th><th>\(\rho_{>5\,\mathrm{Hz}}\)</th></tr></thead>
+    <thead><tr><th>Policy variant</th><th>\(\Delta q_{\text{rms}}\) (rad)</th><th>\(\tau_{\text{step}}\) RMS (N&middot;m)</th><th>Centroid (Hz)</th><th>\(\rho_{>5\,\mathrm{Hz}}\)</th><th>vs. own baseline</th></tr></thead>
     <tbody>
-      <tr><td>Full reward baseline</td><td>0.0668</td><td>2.34</td><td>3.29</td><td>0.051</td></tr>
-      <tr><td>No <code>action_rate</code></td><td>0.0723</td><td class="em">2.53 (+8%)</td><td>3.43</td><td>0.119</td></tr>
-      <tr><td>No gait terms</td><td>0.0747</td><td>2.62 (+12%)</td><td>4.98</td><td>0.146</td></tr>
-      <tr><td>No <code>torques</code> + <code>energy</code></td><td>0.1267</td><td class="em">4.43 (+89%)</td><td>5.44</td><td>0.363</td></tr>
-      <tr><td>Task terms only</td><td>0.1586</td><td>5.55 (+137%)</td><td>10.44</td><td>0.898</td></tr>
+      <tr><td>Full reward baseline</td><td>0.0702 &plusmn; 0.0034</td><td>2.46 &plusmn; 0.12</td><td>3.46 &plusmn; 0.34</td><td>0.105 &plusmn; 0.068</td><td>&mdash;</td></tr>
+      <tr><td>No <code>orientation</code></td><td>0.0722 &plusmn; 0.0037</td><td>2.53 &plusmn; 0.13</td><td>3.60 &plusmn; 0.64</td><td>0.119 &plusmn; 0.110</td><td>+3% &plusmn; 7 <sup>ns</sup></td></tr>
+      <tr><td>No <code>feet_air_time</code></td><td>0.0708 &plusmn; 0.0024</td><td>2.48 &plusmn; 0.08</td><td>3.45 &plusmn; 0.23</td><td>0.113 &plusmn; 0.061</td><td>+1% &plusmn; 7 <sup>ns</sup></td></tr>
+      <tr><td>No <code>action_rate</code></td><td>0.0734 &plusmn; 0.0031</td><td>2.57 &plusmn; 0.11</td><td>3.39 &plusmn; 0.13</td><td>0.105 &plusmn; 0.052</td><td class="em">+5% &plusmn; 6 <sup>ns</sup></td></tr>
+      <tr><td>No gait terms</td><td>0.0803 &plusmn; 0.0053</td><td>2.81 &plusmn; 0.18</td><td>5.66 &plusmn; 0.86</td><td>0.202 &plusmn; 0.044</td><td>+15% &plusmn; 8</td></tr>
+      <tr><td>No <code>torques</code> + <code>energy</code></td><td>0.1216 &plusmn; 0.0116</td><td class="em">4.26 &plusmn; 0.41</td><td>5.04 &plusmn; 1.16</td><td>0.332 &plusmn; 0.150</td><td class="em">+74% &plusmn; 23</td></tr>
+      <tr><td>Task terms only</td><td>0.1612 &plusmn; 0.0073</td><td>5.64 &plusmn; 0.25</td><td>10.68 &plusmn; 0.24</td><td>0.886 &plusmn; 0.030</td><td>+130% &plusmn; 18</td></tr>
     </tbody>
   </table>
   </div>
@@ -463,10 +468,26 @@ knee dissipation, whereas jitter drives overheating in lightly loaded joints.</p
 
 {{FIG_SPEC}}
 
-<p class="noind">Ablating the standard <code>action_rate</code> penalty increases step transients by
-only 8%. Conversely, eliminating joint torque and energy regularizations inflates step transients by
-89%. Direct effort minimization, rather than discrete action smoothing, serves as the primary
-regularizer of command-side thermal load.</p>
+<p class="noind"><b>Ablating <code>action_rate</code> produces no effect we can measure.</b> The paired
+change is +5% &plusmn; 6, an interval containing zero, and in one seed of five the ablated policy is
+<i>smoother</i> than its own baseline, so the ordering this section's title asserts fails outright
+there. An earlier single-seed draft of this table reported +8%; that was one draw from this
+distribution, not an effect.</p>
+
+<p class="noind"><b>Ablating the effort terms produces a large one.</b> The paired change is
++74% &plusmn; 23, positive in every seed, and removing all shaping leaves +130% &plusmn; 18. Direct
+effort minimization, not discrete action smoothing, is the primary regularizer of command-side thermal
+load.</p>
+
+<p class="noind">The spread is not an artefact of unstable training. Final evaluation return across
+the five seeds is tight for every variant (baseline 25.8 &plusmn; 0.6, no <code>torques</code> +
+<code>energy</code> 29.6 &plusmn; 0.4, task-only 26.3 &plusmn; 0.3), so all 35 runs learned to walk;
+the variation in Table 2 is variation in <i>how</i> they walk, not in <i>whether</i> they did.</p>
+
+<p class="noind">Two cautions. The <i>no gait terms</i> variant at +15% &plusmn; 8 is the only one near
+the separability boundary, and we do not lean on it. And \(\rho_{>5\,\mathrm{Hz}}\) is far noisier
+across seeds than the transient statistic &mdash; the baseline alone spans 0.105 &plusmn; 0.068
+&mdash; so we read that column as descriptive only and base no claim on its relative changes.</p>
 
 <h3><span class="secno">5.3</span>Open-loop filtering and the cost of phase lag</h3>
 
@@ -721,7 +742,9 @@ electrical winding loss under constant torque sensitivity \(K_t\). Stator iron c
 switching dynamics, and winding thermal diffusion are omitted. Single-joint analytical sweeps omit
 ground impact dynamics. Evaluations are conducted on flat terrain using a single quadruped morphology,
 the Unitree Go1. The 5 Hz gait split is a hand-chosen parameter and has not been swept, and the reward
-ablations of Section 5.2 are single-seed over 8 s intervals with no confidence intervals reported
+ablations of Section 5.2 now carry five seeds and paired intervals (Appendix A.2), while every other
+experiment here remains single-seed, including the closed-loop results of Section 5.5, whose episode
+counts give spread across episodes rather than across training runs
 (<span class="pending">pending</span>, Appendix C). Extending four-band spectral decomposition to
 humanoid platforms such as the Unitree G1, and validating the 3.2 N&middot;m crossover on physical
 dynamometer testbenches, represent essential future directions.</p>
@@ -756,8 +779,12 @@ anywhere in this draft.</p>
 Sweeping 3&ndash;8 Hz and plotting the reachable share would show whether the core conclusions survive
 the choice of split.</p>
 
-<p class="noind"><strong>A.2 Multi-seed reward ablation.</strong> Section 5.2 is single-seed over 8 s.
-Repeating over five seeds and reporting mean &plusmn; standard deviation.</p>
+<p class="noind"><strong>A.2 Multi-seed reward ablation. Done.</strong> All seven variants were
+retrained from five seeds at 60M timesteps each, 35 runs in total. Section 5.2 and Table 2 report
+mean &plusmn; s.d. with paired per-seed intervals. The headline change: the <code>action_rate</code>
+effect, previously reported as +8% from one seed, is +5% &plusmn; 6 over five and is not separable
+from seed noise. Per-seed values are in <code>data/results/ablation-multiseed-raw.csv</code>; the
+analysis is <code>data/scripts/multiseed_ablation.py</code>.</p>
 
 <p class="noind"><strong>A.3 G1 humanoid verification.</strong> Running the same four-band
 decomposition on a G1 standing and walking, to support the cross-morphology claim the introduction
@@ -840,8 +867,8 @@ flagged at its point of use rather than estimated.</p>
       <tr><td>Author, affiliation, contact</td><td>Title block</td><td>Author decision.</td></tr>
       <tr><td>Reference [2] author list</td><td>References</td><td>The arXiv:2603.01631 abstract page. An earlier draft carried a four-name list that no search could confirm; it has been removed rather than reprinted.</td></tr>
       <tr><td class="em"><s>Source for the 83 Hz Lite3 policy rate</s> &mdash; resolved: claim removed</td><td>Section 2</td><td><strong>No public source states it.</strong> The only published Lite3 policy rate found is roughly 50 Hz, which contradicts it; 83 Hz is reconstructable as 1000/12, which is an inference rather than a citable fact. The 1 kHz state loop is separately sourced [63]. Either a first-hand deployment measurement or removal of the figure.</td></tr>
-      <tr><td>Statistics for two of the seven ablation variants</td><td>Section 5.2, Table 2</td><td>The ablation run logs.</td></tr>
-      <tr><td>Confidence intervals and seed counts</td><td>Section 5.2, Section 8</td><td>Appendix A.2. Section 5.2 is single-seed over 8 s; no interval is reported anywhere in any draft.</td></tr>
+      <tr><td><s>Statistics for two of the seven ablation variants</s> &mdash; resolved: all seven are in Table 2</td><td>Section 5.2, Table 2</td><td>Closed by the five-seed rerun of Appendix A.2.</td></tr>
+      <tr><td><s>Confidence intervals and seed counts</s> &mdash; resolved for Section 5.2</td><td>Section 5.2, Section 8</td><td>Appendix A.2 delivered five seeds and paired intervals. Still open for every other experiment, which Section 8 now states.</td></tr>
       <tr><td>Gait-split sensitivity</td><td>Section 3.1, Section 8, Appendix A.1</td><td>Sweeping \(f_g\) over 3&ndash;8 Hz.</td></tr>
       <tr><td>G1 humanoid band decomposition</td><td>Section 1, Section 8, Appendix A.3</td><td>Running E4 on a G1. The cross-morphology claim rests on it.</td></tr>
       <tr><td>Hardware confirmation of the 3.2 N&middot;m crossover</td><td>Section 5.1, Section 8, Appendix A.4</td><td>One motor, a torque load and a current probe.</td></tr>

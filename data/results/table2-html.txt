@@ -1,0 +1,11 @@
+# Table 2 body, 5 seeds, mean +/- sd across seeds.
+# The last column is the paired change against each seed's own
+# baseline. 'ns' marks an interval that straddles zero.
+
+      <tr><td>Full reward baseline</td><td>0.0702 &plusmn; 0.0034</td><td>2.46 &plusmn; 0.12</td><td>3.46 &plusmn; 0.34</td><td>0.105 &plusmn; 0.068</td><td>—</td></tr>
+      <tr><td>No orientation</td><td>0.0722 &plusmn; 0.0037</td><td>2.53 &plusmn; 0.13</td><td>3.60 &plusmn; 0.64</td><td>0.119 &plusmn; 0.110</td><td>+3% &plusmn; 7 ns</td></tr>
+      <tr><td>No feet air time</td><td>0.0708 &plusmn; 0.0024</td><td>2.48 &plusmn; 0.08</td><td>3.45 &plusmn; 0.23</td><td>0.113 &plusmn; 0.061</td><td>+1% &plusmn; 7 ns</td></tr>
+      <tr><td>No <code>action_rate</code></td><td>0.0734 &plusmn; 0.0031</td><td>2.57 &plusmn; 0.11</td><td>3.39 &plusmn; 0.13</td><td>0.105 &plusmn; 0.052</td><td>+5% &plusmn; 6 ns</td></tr>
+      <tr><td>No gait terms</td><td>0.0803 &plusmn; 0.0053</td><td>2.81 &plusmn; 0.18</td><td>5.66 &plusmn; 0.86</td><td>0.202 &plusmn; 0.044</td><td>+15% &plusmn; 8</td></tr>
+      <tr><td>No torques + energy</td><td>0.1216 &plusmn; 0.0116</td><td>4.26 &plusmn; 0.41</td><td>5.04 &plusmn; 1.16</td><td>0.332 &plusmn; 0.150</td><td>+74% &plusmn; 23</td></tr>
+      <tr><td>Task terms only</td><td>0.1612 &plusmn; 0.0073</td><td>5.64 &plusmn; 0.25</td><td>10.68 &plusmn; 0.24</td><td>0.886 &plusmn; 0.030</td><td>+130% &plusmn; 18</td></tr>
