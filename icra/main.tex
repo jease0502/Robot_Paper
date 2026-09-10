@@ -19,6 +19,7 @@
 \usepackage{booktabs}
 \usepackage{url}
 \usepackage[table]{xcolor}
+\usepackage[inline]{enumitem}
 \usepackage{microtype}   % subtle tracking/protrusion; buys lines without visible change
 \usepackage{balance}
 
@@ -39,6 +40,9 @@
 \setlength{\abovecaptionskip}{3pt plus 1pt minus 1pt}
 \setlength{\belowcaptionskip}{2pt plus 1pt minus 1pt}
 
+\setlength{\abovedisplayskip}{3pt plus 1pt minus 1pt}
+\setlength{\belowdisplayskip}{3pt plus 1pt minus 1pt}
+
 \pagestyle{empty}
 \thispagestyle{empty}
 
@@ -47,6 +51,9 @@
 % independently and its switch says what is lost. Rebuild to see the count.
 %
 % off by default: the raw plots whose numbers a table already carries.
+\newif\ifshowFilterSchematic  \showFilterSchematicfalse   % off: loses the kernel-placement schematic; the three schemes are described in the text
+\newif\ifshowBandTable  \showBandTablefalse   % off: loses the four-band table; the same split is in Fig. 3 and in Table 5
+\newif\ifshowOpenLoopTable  \showOpenLoopTablefalse   % off: loses the open-loop replay table; its two conclusions are stated in the text
 \newif\ifshowJointTable  \showJointTablefalse
 \newif\ifshowLoadSweep  \showLoadSweepfalse
 \newif\ifshowNyquistTable  \showNyquistTablefalse
@@ -134,7 +141,7 @@ retraining.
 
 \subsection{Contributions}
 
-\begin{itemize}
+\begin{itemize}[nosep,leftmargin=*]
 \item \textbf{Spectral and quadrature heat decomposition.} We formulate an exact
 Parseval-based decomposition isolating copper loss into static posture, gait
 fundamentals (0--5\,Hz), in-band jitter (5--25\,Hz), and zero-order-hold (ZOH)
@@ -228,19 +235,11 @@ dissipation that any command-stream filter can influence.
 \subsection{Ripple Fraction and Out-of-Band Power}
 
 When full power spectral density data is unavailable, joint torque fluctuation is
-quantified via the joint-level ripple fraction
-\begin{equation}
-r = \frac{\mathrm{Var}(\tau)}{\bar{\tau}^2 + \mathrm{Var}(\tau)} .
-\label{eq:ripple}
-\end{equation}
-Independent of plant dynamics, command-side roughness is characterized by the
+quantified via the joint-level ripple fraction $r = \mathrm{Var}(\tau)/
+(\bar{\tau}^2 + \mathrm{Var}(\tau))$. Independent of plant dynamics, command-side roughness is characterized by the
 out-of-band command power fraction
-\begin{equation}
-\rho = \frac{\int_{f_c}^{f_{\mathrm{Nyq}}} S_q(f)\,\mathrm{d}f}
-            {\int_{0}^{f_{\mathrm{Nyq}}} S_q(f)\,\mathrm{d}f} ,
-\label{eq:rho}
-\end{equation}
-where $f_c$ is the joint's $-3$\,dB closed-loop bandwidth, 15.3\,Hz for the
+$\rho = \int_{f_c}^{f_{\mathrm{Nyq}}} S_q(f)\,\mathrm{d}f \big/
+\int_{0}^{f_{\mathrm{Nyq}}} S_q(f)\,\mathrm{d}f$, where $f_c$ is the joint's $-3$\,dB closed-loop bandwidth, 15.3\,Hz for the
 Unitree Go1 model. A coarser metric evaluated at 5\,Hz, denoted
 $\rho_{>5\,\mathrm{Hz}}$, is also used to track broadband high-frequency content.
 The two are different cuts and are not interchangeable.
@@ -302,10 +301,11 @@ rollouts. Mean torque per policy step is recorded at 50\,Hz, with spectral cuts 
 model, AR(8), is fitted by least squares on baseline rollouts in the standard
 linear-prediction sense~\cite{makhoul} and rolled forward
 two steps. This enables a symmetric Hann window~\cite{harris} to be applied without awaiting
-future samples, eliminating filter phase lag (Fig.~\ref{fig:filters}). Joints
+future samples, eliminating filter phase lag\ifshowFilterSchematic (Fig.~\ref{fig:filters})\fi. Joints
 whose mean absolute torque $|\bar{\tau}|$ falls below the $3.2\Nm$ threshold are
 filtered, whereas heavily loaded joints pass through unmodified.
 
+\ifshowFilterSchematic  % off: loses the kernel-placement schematic; the three schemes are described in the text
 \begin{figure}[!tb]
 \centering
 \includegraphics[width=0.95\columnwidth]{figs/fig5-three-filters.pdf}
@@ -317,6 +317,7 @@ margin. The predictive filter keeps the kernel centred on now and estimates the
 half that has not happened yet.}
 \label{fig:filters}
 \end{figure}
+\fi
 
 \section{Results and Empirical Analysis}
 
@@ -361,11 +362,7 @@ At $\rho = 0.20$, an unloaded joint dissipates 10.9 times the heat of an
 uncorrupted command while altering joint motion by only 1.8\%. In contrast, a
 joint supporting a $20\Nm$ static load exhibits merely a 2\% thermal increase under
 the same command roughness. Under unloaded conditions, dissipation follows
-\begin{equation}
-\mathcal{H} = \mathcal{H}_0 + \kappa\,\frac{\rho}{1-\rho}
-\label{eq:kappa}
-\end{equation}
-with $\kappa = 38.4$ and a maximum residual of 0.45\%. The crossover where posture
+$\mathcal{H} = \mathcal{H}_0 + \kappa\,\rho/(1-\rho)$ with $\kappa = 38.4$ and a maximum residual of 0.45\%. The crossover where posture
 loss equals ripple loss, $\bar{\tau}^2 = \mathrm{Var}(\tau)$, emerges at $3.2\Nm$.
 
 On the Unitree Go1, measured mean absolute joint torques $|\bar{\tau}|$ average
@@ -437,9 +434,9 @@ efficiency~\cite{energyreg}.
 \subsection{Open-Loop Filtering and the Cost of Phase Lag}
 
 Replaying baseline trajectories through the unloaded single-joint model
-demonstrates the apparent efficacy of open-loop smoothing
-(Table~\ref{tab:openloop}).
+shows how much open-loop smoothing appears to offer\ifshowOpenLoopTable (Table~\ref{tab:openloop})\fi.
 
+\ifshowOpenLoopTable  % off: loses the open-loop replay table; its two conclusions are stated in the text
 \begin{table}[!tb]
 \caption{Open-loop command replay through an unloaded joint model (E2).}
 \label{tab:openloop}
@@ -458,6 +455,7 @@ Zero-phase Butter. (12\,Hz) & 0.540 & \textbf{0.995} & No \\
 \bottomrule
 \end{tabular}
 \end{table}
+\fi
 
 \ifshowOpenLoopSweep  % off: loses raw open-loop sweep; Table III carries the numbers
 \begin{figure*}[!tb]
@@ -483,8 +481,9 @@ closed-loop experiments reports different values (Table~\ref{tab:policies}).
 \subsection{Spectral Allocation of the Thermal Budget}
 
 Exact Parseval decomposition across 30 closed-loop rollouts sets the theoretical
-ceiling for command filtering (Table~\ref{tab:bands}).
+ceiling for command filtering\ifshowBandTable (Table~\ref{tab:bands})\fi.
 
+\ifshowBandTable  % off: loses the four-band table; the same split is in Fig. 3 and in Table 5
 \begin{table}[!tb]
 \caption{Exact closed-loop torque spectral decomposition across 30 rollouts on the
 baseline Go1 policy (E5). The four components sum to 255.9 against an
@@ -506,6 +505,7 @@ $>25$\,Hz   & ZOH staircase harmonics             & 1.6\% \\
 \bottomrule
 \end{tabular}
 \end{table}
+\fi
 
 The ZOH staircase---the explicit focus of interpolation literature---accounts for
 only 1.6\% of motor dissipation. Discretionary thermal waste resides primarily
