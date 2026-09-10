@@ -316,7 +316,7 @@ Actuator overheating in learned legged locomotion decomposes into steady posture
 
 [8] K. Urs, C. E. Adu, E. J. Rouse, and T. Y. Moore, "Design and characterization of 3D printed, open-source actuators for legged locomotion," arXiv:2202.12395, 2022.
 
-[9] S. J. Jorgensen, J. Holley, F. Mathis, J. S. Mehling, and L. Sentis, "Thermal recovery of multi-limbed robots with electric actuators," in *Proc. Humanoids*, 2019.
+[9] S. J. Jorgensen, J. Holley, F. Mathis, J. S. Mehling, and L. Sentis, "Thermal recovery of multi-limbed robots with electric actuators," *IEEE Robotics and Automation Letters*, vol. 4, no. 2, pp. 1077–1084, 2019. arXiv:1902.00187.
 
 [10] S. Yamamori et al., "Actuator reality shaping for zero-shot sim-to-real robot learning," arXiv:2607.02205, 2026.
 
@@ -356,14 +356,38 @@ Actuator overheating in learned legged locomotion decomposes into steady posture
 
 ---
 
-## Open review flags (unresolved in this revision)
+## Open review flags
 
-These are internal contradictions carried over from the v1 draft. Numbers are quoted from two places in the text that disagree; neither has been changed.
+Internal contradictions carried over from the v1 draft. Numbers are quoted from two places in the text
+that disagree; neither has been changed, because resolving them needs the source data in `exp/`.
+
+**Still open:**
 
 1. **Predictor $R^2$ on the full-reward policy.** §5.3 states 0.679; Table 9 and §5.6 state 0.609.
-2. **Zero-phase-via-delay fall rate.** §5.5 prose states 13% of episodes overall; Table 6 states 0.07, and Table 8's per-velocity rates (0.00 / 0.20 / 0.00) average to 0.067.
+2. **Zero-phase-via-delay fall rate.** §5.5 prose states 13% of episodes overall; Table 6 states 0.07, and Table 8's per-velocity rates (0.00 / 0.20 / 0.00) average to 0.067. The abstract's "20% at 1.0 m/s" is the one that reconciles.
 3. **Policy-aware vs policy-unaware filter.** §5.5 prose quotes 0.917 vs 0.927 heat and 1.249 vs 1.214 tracking; Table 6 lists 0.915 / 1.279 and 0.927 / 1.236.
 4. **Experiment numbering.** §4 defines E1, E2, E3, E5 — E4 is missing, and the figure filenames (`e3-command-filters`, `e4-closed-loop`) do not match the section labels.
 5. **Seven policies, five rows.** §5.2 says seven ablated policies; Table 2 lists five variants.
-6. **Reference [15] authorship.** The author list attached to arXiv:2607.26434 needs verification.
-7. **Reference count.** 21 entries; target is 60.
+6. **`ρ` defined twice.** §3 defines it against the joint's −3 dB bandwidth (15.3 Hz); Table 2's column header is $\rho_{>5\,\mathrm{Hz}}$.
+7. **Reference [2] authorship.** arXiv:2603.01631 is confirmed to exist, but no search exposed its author list; the draft's "L. Qian, Y. Wan, S. Wang, and X. Luo" is unconfirmed.
+8. **Figure `command-spectrum.png` shades the wrong band.** Its grey region is the 15.3 Hz actuator bandwidth, but the paper's central claim is about 5–25 Hz. Regenerate or annotate.
+
+**Resolved 2026-09-10:**
+
+- ~~Reference [15] authorship.~~ **Verified correct** — Weddington, Ölveczky and Baccus *are* the authors of arXiv:2607.26434 (Mini Pupper 2, >50 ms transport delay). The earlier suspicion was wrong.
+- ~~Reference count 21, target 60.~~ **Now 60**, all verified to exist by search. See `references-60.md`.
+- ~~Reference [9] venue.~~ **Corrected**: IEEE RA-L 4(2):1077–1084, 2019, not *Proc. Humanoids*.
+
+---
+
+## Companion artefacts
+
+| File | What it is |
+|---|---|
+| `references-60.md` | 60-entry verified bibliography + per-entry annotation and section mapping |
+| `fig/fig1-architecture.svg` | System architecture: policy → filter → ZOH → PD → motor, with the feedback loop and torque tap |
+| `fig/fig2-crossover.svg` | Quadrature crossover at 3.2 N·m with the Go1 joint families placed |
+| `fig/fig3-band-budget.svg` | Four-band heat budget, both policies |
+| `fig/fig4-latency-backfire.svg` | Closed-loop latency failure across the three commanded velocities |
+| `paper-comic-plan.md` | paper-comic Steps 1–4; Step 5 blocked, no image-generation backend installed |
+| `paper-page.html.tmpl` + `build_page.py` | Reading page. Build with `python3 build_page.py` |

@@ -1,0 +1,842 @@
+<title>Where the Heat Actually Is</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=Spectral:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+:root{
+  --ink:#16191D; --ground:#F1F3F4; --surface:#FFFFFF; --rule:#D3D9DD; --muted:#5C666E;
+  --sig:#1F6F8B; --sig-soft:#1F6F8B26; --heat:#C4351F; --heat-soft:#C4351F1F;
+  --warn:#9A6B12; --warn-soft:#9A6B1218;
+  --band-dc:#C3CBD0; --band-gait:#8D9AA2;
+  --display:"Archivo",ui-sans-serif,system-ui,sans-serif;
+  --body:"Spectral",Georgia,"Noto Serif TC",serif;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,monospace;
+  --measure:68ch;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --ink:#E4E9EC; --ground:#14181B; --surface:#1C2126; --rule:#2E363C; --muted:#96A1A9;
+    --sig:#6FBDD6; --sig-soft:#6FBDD62E; --heat:#E8765C; --heat-soft:#E8765C26;
+    --warn:#D2A03F; --warn-soft:#D2A03F22;
+    --band-dc:#3B444A; --band-gait:#5A666E;
+  }
+}
+:root[data-theme="dark"]{
+  --ink:#E4E9EC; --ground:#14181B; --surface:#1C2126; --rule:#2E363C; --muted:#96A1A9;
+  --sig:#6FBDD6; --sig-soft:#6FBDD62E; --heat:#E8765C; --heat-soft:#E8765C26;
+  --warn:#D2A03F; --warn-soft:#D2A03F22;
+  --band-dc:#3B444A; --band-gait:#5A666E;
+}
+*{box-sizing:border-box}
+body{background:var(--ground);color:var(--ink);font-family:var(--body);font-size:16.5px;line-height:1.66;
+  -webkit-font-smoothing:antialiased;padding:0 0 6rem}
+.wrap{max-width:1180px;margin:0 auto;padding:0 clamp(1rem,4vw,2.5rem)}
+
+/* ---------- masthead ---------- */
+header.mast{border-bottom:1px solid var(--rule);padding:clamp(2rem,5vw,3.5rem) 0 0}
+.kicker{font-family:var(--mono);font-size:11.5px;letter-spacing:.13em;text-transform:uppercase;
+  color:var(--muted);display:flex;flex-wrap:wrap;gap:.5rem 1.4rem;margin-bottom:1.4rem}
+.kicker b{color:var(--heat);font-weight:600}
+h1{font-family:var(--display);font-weight:700;font-size:clamp(1.9rem,4.4vw,3rem);line-height:1.1;
+  letter-spacing:-.02em;margin:0 0 .5rem;max-width:22ch;text-wrap:balance}
+.sub{font-size:clamp(1rem,1.7vw,1.2rem);color:var(--muted);max-width:58ch;margin:0 0 2rem;font-style:italic}
+
+/* ---------- thesis strip ---------- */
+.thesis{margin:0 0 2.6rem}
+.thesis-lab{font-family:var(--mono);font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--muted);margin-bottom:.7rem}
+.strip{display:flex;height:54px;border:1px solid var(--rule);overflow:hidden}
+.strip span{display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:12.5px;
+  font-weight:600;color:var(--ink);min-width:0;overflow:hidden;white-space:nowrap}
+.strip span.s-dc{background:var(--band-dc)}
+.strip span.s-gait{background:var(--band-gait)}
+.strip span.s-zoh{background:var(--heat)}
+.strip span.s-jit{background:var(--sig);color:#fff}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .strip span.s-jit{color:#0F1417}}
+:root[data-theme="dark"] .strip span.s-jit{color:#0F1417}
+.strip-keys{display:flex;margin-top:.55rem;font-family:var(--mono);font-size:11.5px;color:var(--muted)}
+.strip-keys i{font-style:normal;padding-right:.5rem}
+.thesis-note{margin-top:1rem;font-size:15px;max-width:var(--measure)}
+.thesis-note b{color:var(--heat);font-weight:600}
+
+/* ---------- controls ---------- */
+.controls{position:sticky;top:0;z-index:20;background:var(--ground);border-bottom:1px solid var(--rule);
+  padding:.65rem 0;margin-bottom:2.5rem}
+.controls .wrap{display:flex;flex-wrap:wrap;align-items:center;gap:.6rem 1.5rem}
+nav.toc{display:flex;flex-wrap:wrap;gap:.15rem .9rem;font-family:var(--mono);font-size:11.5px;
+  letter-spacing:.04em;flex:1 1 auto}
+nav.toc a{color:var(--muted);text-decoration:none;padding:.15rem 0;border-bottom:1px solid transparent}
+nav.toc a:hover,nav.toc a:focus-visible{color:var(--sig);border-bottom-color:var(--sig)}
+button.tog{font-family:var(--mono);font-size:11.5px;font-weight:600;letter-spacing:.05em;cursor:pointer;
+  border:1px solid var(--warn);background:transparent;color:var(--warn);padding:.35rem .8rem;border-radius:2px}
+button.tog[aria-pressed="true"]{background:var(--warn);color:var(--ground)}
+button.tog:focus-visible,a:focus-visible{outline:2px solid var(--sig);outline-offset:2px}
+
+/* ---------- body ---------- */
+main{display:grid;grid-template-columns:1fr;gap:0}
+section{margin:0 0 3.2rem;scroll-margin-top:4.5rem}
+h2{font-family:var(--display);font-weight:700;font-size:1.42rem;letter-spacing:-.01em;margin:0 0 .3rem;
+  display:flex;gap:.75rem;align-items:baseline;text-wrap:balance}
+h2 .num{font-family:var(--mono);font-size:.78em;font-weight:500;color:var(--sig);flex:none}
+h3{font-family:var(--display);font-weight:600;font-size:1.08rem;margin:2.1rem 0 .5rem;
+  display:flex;gap:.7rem;align-items:baseline;text-wrap:balance}
+h3 .num{font-family:var(--mono);font-size:.82em;font-weight:500;color:var(--muted);flex:none}
+p,ul,ol{max-width:var(--measure)}
+p{margin:0 0 1rem}
+ul,ol{margin:0 0 1rem;padding-left:1.3rem}
+li{margin-bottom:.45rem}
+code{font-family:var(--mono);font-size:.87em;background:var(--sig-soft);padding:.08em .34em;border-radius:2px}
+strong{font-weight:600}
+.lead{font-size:1.05rem}
+.rule{border:0;border-top:1px solid var(--rule);margin:0 0 3rem}
+
+/* ---------- equations ---------- */
+.eq{max-width:var(--measure);margin:1.3rem 0;padding:1rem 1.2rem;background:var(--surface);
+  border-left:2px solid var(--sig);font-family:var(--body);font-size:1.02rem;overflow-x:auto}
+.eq i{font-style:italic}
+.eq .frac{display:inline-flex;flex-direction:column;vertical-align:-0.55em;text-align:center;margin:0 .25em}
+.eq .frac span:first-child{border-bottom:1px solid currentColor;padding:0 .3em}
+.eq .frac span:last-child{padding:0 .3em}
+.eq .ub{display:inline-flex;flex-direction:column;align-items:center;vertical-align:top;margin:0 .18em}
+.eq .ub em{font-family:var(--mono);font-size:10.5px;font-style:normal;color:var(--muted);letter-spacing:.04em;
+  border-top:1px solid var(--rule);margin-top:.15em;padding-top:.1em}
+.eq .big{font-size:1.5em;vertical-align:-.22em}
+.eq sub,.eq sup{font-size:.68em}
+
+/* ---------- tables ---------- */
+.tbl{margin:1.5rem 0;overflow-x:auto;background:var(--surface);border:1px solid var(--rule)}
+table{border-collapse:collapse;width:100%;font-family:var(--mono);font-size:12.8px;
+  font-variant-numeric:tabular-nums;line-height:1.45}
+th,td{padding:.5rem .72rem;text-align:right;border-bottom:1px solid var(--rule);white-space:nowrap}
+th:first-child,td:first-child{text-align:left;white-space:normal;min-width:13ch}
+thead th{font-weight:600;color:var(--muted);font-size:11.5px;letter-spacing:.03em;
+  border-bottom:1.5px solid var(--rule);position:sticky;top:0;background:var(--surface)}
+tbody tr:last-child td{border-bottom:0}
+td.hi{color:var(--sig);font-weight:600}
+td.bad{color:var(--heat);font-weight:600}
+tr.tot td{font-weight:600;border-top:1.5px solid var(--rule)}
+caption{caption-side:bottom;text-align:left;padding:.7rem .72rem;font-family:var(--body);font-size:13.5px;
+  color:var(--muted);border-top:1px solid var(--rule);white-space:normal}
+
+/* ---------- figures ---------- */
+figure{margin:2rem 0;background:var(--surface);border:1px solid var(--rule);padding:1.2rem}
+figure .fbox{overflow-x:auto}
+figure svg{max-width:100%;height:auto;display:block;color:var(--ink)}
+figure img{max-width:100%;height:auto;display:block;margin:0 auto}
+figcaption{margin-top:.9rem;padding-top:.8rem;border-top:1px solid var(--rule);font-size:13.8px;
+  color:var(--muted);line-height:1.55}
+figcaption b{font-family:var(--mono);font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--sig);font-weight:600;display:block;margin-bottom:.25rem}
+
+/* ---------- callouts ---------- */
+.callout{max-width:var(--measure);margin:1.5rem 0;padding:.95rem 1.15rem;background:var(--surface);
+  border-left:2px solid var(--heat);font-size:15px}
+.callout.sig{border-left-color:var(--sig)}
+.callout p:last-child{margin-bottom:0}
+
+/* ---------- review flags ---------- */
+.fl{background:var(--warn-soft);border-bottom:1.5px dotted var(--warn);cursor:help}
+.fl sup{font-family:var(--mono);font-size:9.5px;font-weight:600;color:var(--warn);padding-left:.12em}
+html:not(.flags) .fl{background:transparent;border-bottom:0}
+html:not(.flags) .fl sup{display:none}
+.flagnote{display:none;max-width:var(--measure);margin:.9rem 0;padding:.7rem 1rem;background:var(--warn-soft);
+  border-left:2px solid var(--warn);font-size:14px;color:var(--ink)}
+html.flags .flagnote{display:block}
+.flagnote b{font-family:var(--mono);font-size:11px;letter-spacing:.06em;color:var(--warn);
+  text-transform:uppercase;display:block;margin-bottom:.2rem}
+
+/* ---------- refs ---------- */
+ol.refs{max-width:none;column-count:1;font-size:13.6px;line-height:1.5;padding-left:2.6rem}
+@media(min-width:960px){ol.refs{column-count:2;column-gap:2.5rem}}
+ol.refs li{margin-bottom:.55rem;break-inside:avoid}
+ol.refs .pend{font-family:var(--mono);font-size:11px;color:var(--warn);font-weight:600}
+ol.refs .fix{font-family:var(--mono);font-size:11px;color:var(--sig);font-weight:600}
+
+/* ---------- status grid ---------- */
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:1px;background:var(--rule);
+  border:1px solid var(--rule);margin:1.6rem 0}
+.grid > div{background:var(--surface);padding:1rem 1.1rem}
+.grid dt{font-family:var(--mono);font-size:11px;letter-spacing:.07em;text-transform:uppercase;
+  color:var(--muted);margin-bottom:.45rem}
+.grid dd{margin:0;font-family:var(--display);font-size:1.55rem;font-weight:700;line-height:1.1}
+.grid dd small{display:block;font-family:var(--body);font-size:13px;font-weight:400;color:var(--muted);
+  margin-top:.35rem;line-height:1.45}
+.grid dd.sig{color:var(--sig)} .grid dd.heat{color:var(--heat)} .grid dd.warn{color:var(--warn)}
+
+footer{border-top:1px solid var(--rule);margin-top:3rem;padding-top:1.5rem;font-family:var(--mono);
+  font-size:11.5px;color:var(--muted);line-height:1.8}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<div class="wrap">
+<header class="mast">
+  <div class="kicker">
+    <span>Draft v2 · 2026-09-10</span>
+    <span><b>Simulation only</b> · no hardware</span>
+    <span>Unitree Go1 · MuJoCo</span>
+    <span>Policy frozen</span>
+  </div>
+  <h1>Where the Heat Actually Is</h1>
+  <p class="sub">Decomposing actuator load in learned legged locomotion, and the limits of command filtering.</p>
+
+  <div class="thesis">
+    <div class="thesis-lab">The whole argument, in one bar — where a well-regularized Go1 policy's heat lives</div>
+    <div class="strip">
+      <span class="s-dc" style="flex:0 0 31.3%">DC 31.3%</span>
+      <span class="s-gait" style="flex:0 0 50.6%">0–5 Hz gait 50.6%</span>
+      <span class="s-jit" style="flex:0 0 16.5%">16.5%</span>
+      <span class="s-zoh" style="flex:0 0 1.6%"></span>
+    </div>
+    <div class="strip-keys">
+      <i style="flex:0 0 31.3%">posture</i>
+      <i style="flex:0 0 50.6%">what walking requires</i>
+      <i style="flex:0 0 18.1%">5–25 Hz jitter + &gt;25 Hz ZOH — all a filter can reach</i>
+    </div>
+    <p class="thesis-note">The staircase everyone points at — the zero-order hold's own harmonics — is
+      the sliver on the right. It is <b>1.6%</b> of the heat. The waste is one decade lower, in
+      5–25 Hz command content, and a causal predictive filter recovers about half of it.</p>
+  </div>
+</header>
+</div>
+
+<div class="controls">
+  <div class="wrap">
+    <nav class="toc" aria-label="Sections">
+      <a href="#abstract">Abstract</a><a href="#s1">1 Intro</a><a href="#s2">2 Pipeline</a>
+      <a href="#s3">3 Metrics</a><a href="#s4">4 Setup</a><a href="#s5">5 Results</a>
+      <a href="#s6">6 Discussion</a><a href="#s7">7 Related</a><a href="#s8">8 Limitations</a>
+      <a href="#s9">9 Conclusion</a><a href="#refs">References</a><a href="#flags">Open flags</a>
+    </nav>
+    <button class="tog" id="ft" aria-pressed="true">⚑ Review flags: on</button>
+  </div>
+</div>
+
+<div class="wrap">
+<main>
+
+<section id="abstract">
+  <h2><span class="num">§</span>Abstract</h2>
+  <p class="lead">Reinforcement learning (RL) locomotion policies frequently overheat commercial quadrupedal
+  and humanoid actuators in operating regimes where vendor controllers remain thermally stable. The standard
+  explanation attributes this dissipation to high-frequency command jitter, prescribing smoothness penalties
+  in the reward function as the default remedy. However, this hypothesis has not been evaluated against the
+  alternative explanation: that learned policies adopt postures demanding higher steady-state torque.</p>
+
+  <p>We decouple these mechanisms by demonstrating that electrical copper loss decomposes into a posture term
+  and a ripple term. Because these terms add in quadrature, their relative dominance depends strictly on joint
+  steady-state torque. We locate this crossover threshold analytically and empirically at 3.2 N·m on a Unitree
+  Go1 quadruped. Load-bearing calf joints operate above this threshold, carrying only 14–17% of their heat in
+  bands accessible to filtering; conversely, hip abduction joints operate below it, carrying 33–45% of their
+  thermal dissipation in the filter-reachable band.</p>
+
+  <p>Evaluating post-hoc command filtering on frozen policies, our spectral decomposition reveals that
+  zero-order hold (ZOH) staircase harmonics account for only 1.6% of total heat, whereas 5–25 Hz command
+  content accounts for the remaining discretionary dissipation. Although open-loop evaluation suggests a 46%
+  thermal reduction via zero-phase filtering, this ceiling collapses in closed loop. Introducing latency to
+  eliminate phase lag degrades feedback stability, inducing falls in 20% of episodes at 1.0 m/s on
+  well-regularized policies and in every episode on unregularized policies. Conversely, a causal predictive
+  filter combined with joint-load gating safely recovers 47–54% of the reachable thermal budget across both
+  regularized and unregularized checkpoints without inducing falls. Finally, we demonstrate that commonly
+  deployed <code>action_rate</code> penalties fail to govern command-side thermal load, whereas effort
+  penalties dictate the reachable budget.</p>
+
+  <div class="grid">
+    <div><dt>Reachable budget</dt><dd class="sig">18.1%<small>Full-reward policy. 43.3% once the effort reward terms are removed.</small></dd></div>
+    <div><dt>ZOH staircase share</dt><dd class="heat">1.6%<small>The defect the field points at carries almost none of the heat.</small></dd></div>
+    <div><dt>Load crossover</dt><dd>3.2 N·m<small>Below it, ripple dominates. 8 of Go1's 12 joints sit below.</small></dd></div>
+    <div><dt>Closed-loop recovery</dt><dd class="sig">8.5%<small>Against a 46% open-loop ceiling. Cliff's δ = −0.33, a <em>small</em> effect.</small></dd></div>
+  </div>
+</section>
+
+<hr class="rule">
+
+<section id="s1">
+  <h2><span class="num">1</span>Introduction</h2>
+  <p>Legged locomotion policies trained via reinforcement learning frequently encounter actuator thermal limits
+  during real-world deployment. On a Unitree G1 humanoid running a whole-body controller, ankle-roll actuators
+  reach approximately 90 °C within 5 to 10 minutes during static standing, whereas the manufacturer's
+  controller maintains the identical joints between 30 °C and 45 °C [1]. Similarly, on a Unitree A1 carrying a
+  3 kg payload, baseline RL policies trigger thermal protection in 5 to 7 minutes [2], [3]. Conversely, on a
+  Go2-W, a learned policy plateaus at 60 °C over 51 minutes of walking, whereas the vendor controller diverges
+  to 84 °C and shuts down at 34 minutes [4]. These observations confirm that policy behavior dictates thermal
+  dissipation, yet the community remains divided regarding the governing mechanism.</p>
+
+  <p>Two competing hypotheses currently prevail:</p>
+  <ul>
+    <li><strong>The Posture Hypothesis.</strong> Thermal dissipation is governed by the steady-state holding
+    torque demanded by the chosen kinematic posture. Supported by Go2-W trials, where a 24 °C difference at
+    50 Hz was attributed to periodic foot lifting that relieved steady joint torque [4].</li>
+    <li><strong>The Jitter Hypothesis.</strong> Excessive heating stems from high-frequency command
+    oscillations that inflate RMS current without producing functional torque. Supported by the G1 ankle-roll
+    failure, where static holding torque is fixed by gravity, yet controllers exhibit a 45–60 K temperature
+    disparity [1].</li>
+  </ul>
+
+  <p>Neither hypothesis has measured both terms independently. Physical copper loss dictates that posture
+  torque and dynamic torque ripple add in quadrature:</p>
+
+  <div class="eq">
+    <i>H</i> ∝ 𝔼[<i>τ</i><sup>2</sup>] =
+    <span class="ub"><span><i>τ̄</i><sup>2</sup></span><em>posture</em></span> +
+    <span class="ub"><span>Var(<i>τ</i>)</span><em>ripple</em></span>
+  </div>
+
+  <p>A zero-mean command ripple produces no net torque while contributing its full variance to thermal
+  dissipation. Crucially, because the terms add in quadrature, a substantial steady torque <i>τ̄</i> suppresses
+  the relative contribution of Var(<i>τ</i>). <strong>Whether command jitter governs thermal load is therefore
+  a function of joint-specific loading rather than an intrinsic property of the policy.</strong></p>
+
+  {{FIG1}}
+</section>
+
+<hr class="rule">
+
+<section id="s2">
+  <h2><span class="num">2</span>Actuation Pipeline and Problem Formulation</h2>
+  <p>Commercial quadruped and humanoid architectures execute proportional-derivative (PD) loops directly on
+  the motor drive rather than within the policy process. On Unitree systems, the policy executes at 50 Hz and
+  commands are written at 500 Hz; DeepRobotics Lite3 deployments run policies at approximately 83 Hz over a
+  1 kHz state loop. Actuator-level control frequencies reach 6 kHz for the Unitree GO-M8010-6 and 1 kHz for
+  the DeepRobotics J60 [6].</p>
+
+  <p>A zero-order hold interfaces the policy to the low-level loop. At 50 Hz into 500 Hz, each command is held
+  for 10 ticks before stepping discontinuously, producing an instantaneous proportional transient of
+  <i>k<sub>p</sub></i> Δ<i>q</i> prior to rotor displacement.</p>
+
+  <p>In standardized environments such as <code>unitree_rl_mjlab</code> [29], PD gains are derived from a
+  target closed-loop natural frequency of 10 Hz and a damping ratio of <i>ζ</i> = 2.0, with action scaling
+  set to 0.25 <i>e</i>/<i>k<sub>p</sub></i>, where <i>e</i> is the effort limit. Consequently, an action
+  reversal between successive policy steps commands a peak transient:</p>
+
+  <div class="eq">
+    <i>τ</i><sub>step</sub> = <i>k<sub>p</sub></i> · 2 ·
+    <span class="frac"><span>0.25 <i>e</i></span><span><i>k<sub>p</sub></i></span></span>
+    = 0.5 <i>e</i>
+  </div>
+
+  <p>A full-scale action reversal commands a transient equal to half the joint torque limit. With
+  <i>ζ</i> = 2.0, the dominant closed-loop pole is at 2.68 Hz, whereas the 50 Hz command stream carries
+  spectral content to the 25 Hz Nyquist limit.</p>
+</section>
+
+<hr class="rule">
+
+<section id="s3">
+  <h2><span class="num">3</span>Metrics</h2>
+
+  <h3><span class="num">3.1</span>Spectral heat decomposition</h3>
+  <p>Applying Parseval's theorem to joint torque partitioned into mean and zero-mean components:</p>
+  <div class="eq">
+    𝔼[<i>τ</i><sup>2</sup>] = <i>τ̄</i><sup>2</sup> +
+    <span class="big">∫</span><sub>0</sub><sup><i>f<sub>g</sub></i></sup> <i>S<sub>τ</sub></i>(<i>f</i>) d<i>f</i> +
+    <span class="big">∫</span><sub><i>f<sub>g</sub></i></sub><sup><i>f</i><sub>Nyq</sub></sup> <i>S<sub>τ</sub></i>(<i>f</i>) d<i>f</i> +
+    𝔼<sub><i>k</i></sub>[Var<sub>sub</sub>(<i>τ</i>)]
+  </div>
+  <p>with <i>f<sub>g</sub></i> = 5 Hz isolating gait frequencies and <i>f</i><sub>Nyq</sub> = 25 Hz the policy
+  Nyquist. The last term collects intra-step variance above Nyquist — the ZOH's own harmonics. <strong>The sum
+  of the final two terms defines the reachable share</strong> available to command-stream filtering.</p>
+
+  <h3><span class="num">3.2</span>Ripple fraction and out-of-band command power</h3>
+  <div class="eq">
+    <i>r</i> = <span class="frac"><span>Var(<i>τ</i>)</span><span><i>τ̄</i><sup>2</sup> + Var(<i>τ</i>)</span></span>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+    <i>ρ</i> = <span class="frac"><span><span class="big">∫</span><sub><i>f<sub>c</sub></i></sub><sup><i>f</i><sub>Nyq</sub></sup> <i>S<sub>q</sub></i>(<i>f</i>) d<i>f</i></span><span><span class="big">∫</span><sub>0</sub><sup><i>f</i><sub>Nyq</sub></sup> <i>S<sub>q</sub></i>(<i>f</i>) d<i>f</i></span></span>
+  </div>
+  <p><i>ρ</i> is computable from the command stream alone, with no robot, where <i>f<sub>c</sub></i> is the
+  joint −3 dB closed-loop bandwidth.</p>
+  <div class="flagnote"><b>Flag 6 — symbol reused</b> §3 defines <i>ρ</i> against the joint's −3 dB
+  bandwidth (15.3 Hz), but Table 2's column header is <i>ρ</i><sub>&gt;5 Hz</sub>. Two different cutoffs
+  under one symbol. Pick one and relabel.</div>
+
+  <h3><span class="num">3.3</span>Thermal proxy</h3>
+  <p>We quantify motor thermal load via <i>H</i> = (1/<i>T</i>) ∫ <i>τ</i><sup>2</sup> d<i>t</i>, proportional
+  to <i>I</i><sup>2</sup><sub>rms</sub><i>R</i> under a constant torque coefficient. Stator thermal dynamics
+  justify the square rather than the absolute value: on calibrated brushless actuators the winding thermal
+  time constant is 3.12 s against 777 s for the motor housing, a factor of 249 [7]. Driver-reported
+  temperatures therefore lag winding heat badly [39], [40], making current-based proxies the relevant primary
+  signal. Effect sizes throughout are Cliff's δ [45].</p>
+</section>
+
+<hr class="rule">
+
+<section id="s4">
+  <h2><span class="num">4</span>Experimental Setup</h2>
+  <ul>
+    <li><strong>E1 — single joint, synthetic commands.</strong> A second-order joint modeled on the Go1
+    (<i>k<sub>p</sub></i> = 35, damping 0.5, armature 0.005 kg·m², <i>f<sub>n</sub></i> = 13.3 Hz,
+    <i>ζ</i> = 0.60, −3 dB bandwidth 15.3 Hz) driven by a 2 Hz sinusoid with bandpass noise injected above
+    bandwidth. Sampled at 50 Hz, held via ZOH to 500 Hz, integrated at 5 kHz. Load swept 0–20 N·m.</li>
+    <li><strong>E2 — recorded commands, open loop.</strong> Trajectories from seven Go1 policies replayed
+    through the single-joint model. Preserved motion is benchmarked against the ZOH trajectory low-passed at
+    5 Hz, not the raw ZOH trajectory, which would penalise the filter for removing the jitter it exists to
+    remove.</li>
+    <li><strong>E3 — closed loop, full quadruped.</strong> A frozen Go1 policy in MuJoCo (50 Hz policy,
+    500 Hz physics, 10 substeps). The filter operates inside the loop. Ten episodes of 500 steps across three
+    commanded velocities under matched seeds and noise.</li>
+    <li><strong>E5 — spectral decomposition.</strong> Baseline ZOH over 30 rollouts, three velocity commands.
+    Spectral splits at 5 Hz and 25 Hz; intra-step variance supplies the &gt; 25 Hz component.</li>
+  </ul>
+  <div class="flagnote"><b>Flag 4 — E4 does not exist</b> The section promises four protocols and labels them
+  E1, E2, E3, E5. The figure filenames (<code>e3-command-filters</code>, <code>e4-closed-loop</code>) follow a
+  different numbering again. Renumber before submission.</div>
+
+  <p><strong>Predictive filter.</strong> An order-8 linear autoregressive model [44] fitted by least squares
+  to the frozen policy's own ZOH rollouts, rolled forward two steps so a symmetric Hann kernel [43] can be
+  applied without waiting. No simulator interaction beyond calibration, no reward, no retraining.</p>
+  <p><strong>Load gate.</strong> Joints whose measured mean |<i>τ</i>| on the ZOH baseline falls below the
+  3.2 N·m crossover are filtered; the rest pass through untouched.</p>
+</section>
+
+<hr class="rule">
+
+<section id="s5">
+  <h2><span class="num">5</span>Results</h2>
+
+  <h3><span class="num">5.1</span>Load-dependent thermal crossover</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>Static load</th><th>ρ = 0.02</th><th>0.05</th><th>0.10</th><th>0.20</th><th>0.40</th></tr></thead>
+    <tbody>
+      <tr><td>0 N·m</td><td>1.81</td><td>3.08</td><td>5.38</td><td class="bad">10.86</td><td>27.30</td></tr>
+      <tr><td>2 N·m</td><td>1.15</td><td>1.40</td><td>1.84</td><td>2.89</td><td>6.04</td></tr>
+      <tr><td>5 N·m</td><td>1.03</td><td>1.08</td><td>1.16</td><td>1.36</td><td>1.96</td></tr>
+      <tr><td>10 N·m</td><td>1.01</td><td>1.02</td><td>1.04</td><td>1.09</td><td>1.25</td></tr>
+      <tr><td>20 N·m</td><td>1.00</td><td>1.00</td><td>1.01</td><td class="hi">1.02</td><td>1.06</td></tr>
+    </tbody>
+    <caption><strong>Table 1.</strong> Heat relative to ρ = 0 at the same load. Three seeds. At ρ = 0.2 an
+    unloaded joint spends 10.9× the heat while moving 1.8% more; a joint holding 20 N·m spends 2% more.</caption>
+  </table></div>
+
+  {{FIG_E1}}
+
+  <p>Unloaded, dissipation follows <i>H</i> = <i>H</i><sub>0</sub> + <i>κ ρ</i>/(1−<i>ρ</i>) with
+  <i>κ</i> = 38.4 and a maximum residual of 0.45%. The crossover, where <i>τ̄</i><sup>2</sup> = Var(<i>τ</i>),
+  sits at 3.2 N·m. On the Go1, mean |<i>τ</i>| is 1.24–1.48 N·m at the hips, 2.00–2.59 N·m at the thighs and
+  5.88–6.88 N·m at the calves. Eight of twelve joints sit below the crossover; the four knees sit above it.</p>
+
+  <div class="callout sig"><p>This resolves the contradiction in §1. The posture camp and the jitter camp are
+  both right, about different joints. The G1 case that motivates the jitter explanation is an
+  <strong>ankle roll</strong> — one of the least statically loaded joints in a humanoid leg.</p></div>
+
+  {{FIG2}}
+
+  <h3><span class="num">5.2</span><code>action_rate</code> is not the thermally relevant reward term</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>Policy variant</th><th>Δq<sub>rms</sub> (rad)</th><th>τ<sub>step</sub> RMS (N·m)</th><th>Centroid (Hz)</th><th>ρ<sub>&gt;5 Hz</sub></th></tr></thead>
+    <tbody>
+      <tr><td>Full reward baseline</td><td>0.0668</td><td>2.34</td><td>3.29</td><td>0.051</td></tr>
+      <tr><td>No <code>action_rate</code></td><td>0.0723</td><td>2.53 (+8%)</td><td>3.43</td><td>0.119</td></tr>
+      <tr><td>No gait terms</td><td>0.0747</td><td>2.62 (+12%)</td><td>4.98</td><td>0.146</td></tr>
+      <tr><td>No torques + energy</td><td>0.1267</td><td class="bad">4.43 (+89%)</td><td>5.44</td><td>0.363</td></tr>
+      <tr><td>Task terms only</td><td>0.1586</td><td class="bad">5.55 (+137%)</td><td>10.44</td><td>0.898</td></tr>
+    </tbody>
+    <caption><strong>Table 2.</strong> Command-side spectral properties across reward ablations.
+    <span class="fl">Seven ablated policies are described; five variants are listed.<sup>▲5</sup></span>
+    Single seed, 8 s per variant — a direction, not a hypothesis test.</caption>
+  </table></div>
+
+  {{FIG_SPEC}}
+
+  <p>Ablating <code>action_rate</code> raises the staircase transient by 8%. Removing the effort terms raises
+  it by 89%. The field uses <code>action_rate</code> and <code>dof_acc</code> on the stated grounds that
+  jitter burns motors; on this evidence they are not the terms doing that work.</p>
+
+  <h3><span class="num">5.3</span>Open-loop filtering and the cost of phase lag</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>Filtering scheme</th><th>Heat H/H<sub>ZOH</sub></th><th>Motion kept</th><th>Deployable</th></tr></thead>
+    <tbody>
+      <tr><td>Baseline ZOH</td><td>1.000</td><td>1.000</td><td>—</td></tr>
+      <tr><td>Linear interpolation</td><td>0.696</td><td>0.819</td><td>yes</td></tr>
+      <tr><td>Causal Butterworth 12 Hz</td><td>0.588</td><td>0.745</td><td>yes</td></tr>
+      <tr><td>Predictive filter</td><td class="hi">0.428</td><td>0.741</td><td>yes</td></tr>
+      <tr><td>Zero-phase Butterworth 12 Hz</td><td class="bad">0.540</td><td class="bad">0.995</td><td>no</td></tr>
+    </tbody>
+    <caption><strong>Table 3.</strong> Open-loop command replay through an unloaded joint. The last two rows
+    are the point: zero-phase filtering [42] removes 46% of the heat while reproducing the in-band trajectory
+    to 0.0004 rad; the causal version of the same filter at the same cutoff keeps only 74.5%. The difference
+    is phase lag alone.</caption>
+  </table></div>
+
+  {{FIG_E3}}
+
+  <p>Out-of-sample predictor accuracy reaches <i>R</i><sup>2</sup> =
+  <span class="fl">0.679<sup>▲1</sup></span> on the full-reward policy, 0.385 without effort terms and 0.059
+  with no regularization. The policies whose commands most need filtering are the ones whose commands are
+  least predictable.</p>
+  <div class="flagnote"><b>Flag 1 — two values for one quantity</b> §5.3 reports the full-reward predictor at
+  <i>R</i><sup>2</sup> = 0.679; Table 9 and §5.6 report 0.609. Both figures appear in the original draft.
+  Resolve against <code>exp/</code> output — do not average them.</div>
+
+  <h3><span class="num">5.4</span>Spectral allocation of the thermal budget</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>Band</th><th>Physical mechanism</th><th>Share of heat</th></tr></thead>
+    <tbody>
+      <tr><td>DC</td><td style="text-align:left;white-space:normal">Posture: static body support</td><td>31.3%</td></tr>
+      <tr><td>0–5 Hz</td><td style="text-align:left;white-space:normal">Gait: torque modulation walking requires</td><td>50.6%</td></tr>
+      <tr><td>5–25 Hz</td><td style="text-align:left;white-space:normal">In-band jitter — reachable by a low-pass</td><td class="hi">16.5%</td></tr>
+      <tr><td>&gt; 25 Hz</td><td style="text-align:left;white-space:normal">ZOH staircase's own harmonics</td><td class="bad">1.6%</td></tr>
+      <tr class="tot"><td>Total reachable</td><td style="text-align:left;white-space:normal">Jitter + discretization harmonics</td><td class="hi">18.1%</td></tr>
+    </tbody>
+    <caption><strong>Table 4.</strong> Thirty rollouts, three velocity commands. The four bands sum to
+    𝔼[τ²] exactly: total 255.9 against an independently computed heat proxy of 256.2, agreeing to 0.1%.</caption>
+  </table></div>
+
+  <div class="tbl"><table>
+    <thead><tr><th>Joint family</th><th>mean |τ| (N·m)</th><th>DC</th><th>Gait</th><th>5–25 Hz</th><th>&gt; 25 Hz</th><th>Reachable</th></tr></thead>
+    <tbody>
+      <tr><td>Hips</td><td>1.2–1.5</td><td>7–21%</td><td>47–54%</td><td>33–45%</td><td>0.3–0.4%</td><td class="hi">33–45%</td></tr>
+      <tr><td>Thighs</td><td>2.0–2.6</td><td>2–19%</td><td>56–78%</td><td>16–29%</td><td>3.0–4.0%</td><td class="hi">20–32%</td></tr>
+      <tr><td>Calves</td><td>5.9–6.9</td><td>32–38%</td><td>45–54%</td><td>13–16%</td><td>1.1–1.6%</td><td>14–17%</td></tr>
+    </tbody>
+    <caption><strong>Table 5.</strong> The hips, furthest below the 3.2 N·m crossover, have the largest
+    reachable share; the calves, above it, the smallest. This is the ordering §5.1 predicts.</caption>
+  </table></div>
+
+  {{FIG3}}
+
+  <h3><span class="num">5.5</span>Closed loop: latency induces instability</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>Scheme</th><th>H/H<sub>ZOH</sub></th><th>Tracking err</th><th>δ(H)</th><th>δ(vel)</th><th>Fall rate</th></tr></thead>
+    <tbody>
+      <tr><td>Baseline ZOH</td><td>1.000</td><td>1.000</td><td>0.00</td><td>0.00</td><td>0.00</td></tr>
+      <tr><td>Linear interpolation</td><td>0.956</td><td>1.048</td><td>−0.31</td><td>0.13</td><td>0.00</td></tr>
+      <tr><td>Butterworth 5 Hz</td><td class="bad">1.098</td><td>2.594</td><td>−0.04</td><td>1.00</td><td class="bad">0.23</td></tr>
+      <tr><td>Butterworth 8 Hz</td><td>0.946</td><td>1.444</td><td>−0.28</td><td>0.93</td><td>0.00</td></tr>
+      <tr><td>Butterworth 12 Hz</td><td>0.935</td><td>1.160</td><td>−0.28</td><td>0.52</td><td>0.00</td></tr>
+      <tr><td>Butterworth 12 Hz + linear</td><td>0.942</td><td>1.284</td><td>−0.26</td><td>0.75</td><td>0.00</td></tr>
+      <tr><td>Zero-phase via 40 ms delay</td><td class="bad">1.082</td><td>2.493</td><td>−0.03</td><td>1.00</td><td class="bad">0.07</td></tr>
+      <tr><td>Predictive filter</td><td class="hi">0.915</td><td>1.279</td><td>−0.33</td><td>0.71</td><td>0.00</td></tr>
+      <tr><td>Predictive + per-joint gate</td><td>0.940</td><td class="hi">1.157</td><td>−0.33</td><td>0.50</td><td>0.00</td></tr>
+      <tr><td>Predictive, policy unaware</td><td>0.927</td><td>1.236</td><td>−0.33</td><td>0.64</td><td>0.00</td></tr>
+    </tbody>
+    <caption><strong>Table 6.</strong> n = 30 per scheme. Cliff's δ against ZOH; negative means lower. Fall
+    rates are noisy at this n: across two independent runs of the whole matrix the two aggressive schemes fell
+    between 7% and 30% of the time and no other scheme ever fell.</caption>
+  </table></div>
+
+  {{FIG_E4}}
+
+  <p>The best closed-loop scheme removes 8.5% of the heat, against 46% open loop. Set against the 18.1%
+  budget that is a 47% recovery. Cliff's δ = −0.33 is a <em>small</em> effect by the usual convention, and we
+  report it as such.</p>
+
+  <div class="tbl"><table>
+    <thead><tr><th>Scheme</th><th>&gt; 25 Hz term, absolute</th><th>Total H/H<sub>0</sub></th></tr></thead>
+    <tbody>
+      <tr><td>Baseline ZOH</td><td>4.02</td><td>1.000</td></tr>
+      <tr><td>Butterworth 5 Hz</td><td class="hi">1.96</td><td class="bad">1.098</td></tr>
+      <tr><td>Zero-phase via delay</td><td class="hi">2.34</td><td class="bad">1.082</td></tr>
+      <tr><td>Butterworth 12 Hz</td><td>2.93</td><td>0.935</td></tr>
+      <tr><td>Predictive filter</td><td class="bad">4.02</td><td class="hi">0.915</td></tr>
+    </tbody>
+    <caption><strong>Table 7.</strong> The two schemes that halve the staircase term have the
+    <em>highest</em> total heat; the scheme with the lowest total heat leaves it untouched. The saving comes
+    from the 5–25 Hz band, not the staircase. Linear interpolation buys only 4% of total heat.</caption>
+  </table></div>
+
+  <div class="callout"><p><strong>Interpolating between commands — the intervention the zero-order hold most
+  obviously invites — is not worth doing.</strong></p></div>
+
+  <p>In closed loop, delaying commands 40 ms to obtain zero phase increases thermal load by 8.5% and induces
+  falls in <span class="fl">13% of episodes<sup>▲2</sup></span> overall.</p>
+  <div class="flagnote"><b>Flag 2 — prose disagrees with both tables</b> The 13% figure matches neither
+  Table 6 (0.07) nor Table 8's per-velocity rates (0.00 / 0.20 / 0.00, mean 0.067). The abstract's "20% at
+  1.0 m/s" is the one that reconciles.</div>
+
+  <div class="tbl"><table>
+    <thead><tr><th>Scheme</th><th>0.5 m/s</th><th>1.0 m/s</th><th>0.3 m/s + turn</th></tr></thead>
+    <tbody>
+      <tr><td>Zero-phase via delay, H/H<sub>0</sub></td><td>0.883</td><td class="bad">1.258</td><td>0.992</td></tr>
+      <tr><td>Zero-phase via delay, fall rate</td><td>0.00</td><td class="bad">0.20</td><td>0.00</td></tr>
+      <tr><td>Butterworth 5 Hz, H/H<sub>0</sub></td><td>0.880</td><td class="bad">1.295</td><td>0.991</td></tr>
+      <tr><td>Butterworth 5 Hz, fall rate</td><td>0.00</td><td class="bad">0.70</td><td>0.00</td></tr>
+      <tr><td>Predictive + gate, H/H<sub>0</sub></td><td>0.952</td><td class="hi">0.924</td><td>0.956</td></tr>
+      <tr><td>Predictive + gate, vel err / ZOH</td><td>1.298</td><td class="hi">0.995</td><td>1.250</td></tr>
+    </tbody>
+    <caption><strong>Table 8.</strong> At 0.5 m/s the delayed filter looks excellent, removing 12% of the heat
+    with no falls at all. At 1.0 m/s it falls in a fifth of episodes and the 5 Hz Butterworth in seven tenths.
+    Falling is expensive: the heat proxy rises 26–30% above baseline.</caption>
+  </table></div>
+
+  <div class="callout"><p><strong>A filter evaluated only at low speed will be reported as a success and will
+  fail on deployment.</strong> The policy is itself a feedback controller [55]; latency inside its loop comes
+  out of its stability margin, and the failure appears where loop gain matters most — at speed. Open-loop
+  replay cannot show this, because there is no loop.</p></div>
+
+  {{FIG4}}
+
+  <p>Gating by joint load costs 2.5 percentage points of heat reduction (8.5% → 6.0%) while recovering
+  tracking: at 1.0 m/s it removes 7.5% of the heat while tracking <em>slightly better</em> than ZOH (0.995).
+  Whether the policy observes the filtered or the raw action barely matters
+  <span class="fl">(0.917 vs 0.927 heat, 1.249 vs 1.214 tracking)<sup>▲3</sup></span>.</p>
+  <div class="flagnote"><b>Flag 3 — four quoted numbers, three do not match Table 6</b> The table gives
+  0.915 / 1.279 for the policy-aware filter and 0.927 / 1.236 for the unaware one.</div>
+
+  <h3><span class="num">5.6</span>Invariant recovery ratio on unregularized policies</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>Metric</th><th>Full reward</th><th>No effort terms</th></tr></thead>
+    <tbody>
+      <tr><td>Baseline ZOH heat</td><td>255.9</td><td class="bad">376.3 (+47%)</td></tr>
+      <tr><td>DC / gait / 5–25 Hz / &gt; 25 Hz</td><td>31.3 / 50.6 / 16.5 / 1.6</td><td>27.0 / 29.7 / 40.7 / 2.6</td></tr>
+      <tr><td>Filter-reachable share</td><td class="hi">18.1%</td><td class="hi">43.3%</td></tr>
+      <tr><td>Command predictor R²</td><td><span class="fl">0.609<sup>▲1</sup></span></td><td>0.402</td></tr>
+      <tr><td>Predictive filter H/H<sub>0</sub></td><td>0.915</td><td class="hi">0.765</td></tr>
+      <tr class="tot"><td>Recovered / reachable</td><td class="hi">47%</td><td class="hi">54%</td></tr>
+      <tr><td>Predictive + gate H/H<sub>0</sub></td><td>0.940</td><td>0.879</td></tr>
+      <tr><td>Predictive + gate tracking err</td><td>1.157</td><td>1.149</td></tr>
+      <tr><td>Zero-phase via delay H/H<sub>0</sub></td><td class="bad">1.082</td><td class="bad">1.053</td></tr>
+      <tr><td>Zero-phase via delay fall rate</td><td class="bad">0.07</td><td class="bad">0.37</td></tr>
+    </tbody>
+    <caption><strong>Table 9.</strong> Dropping the effort terms moves 25 percentage points of heat into the
+    filter-reachable band and raises the total by 47%. The filter recovers about half of whatever is reachable
+    on both policies, though the raw reduction differs by a factor of nearly three.</caption>
+  </table></div>
+
+  {{FIG_E4B}}
+
+  <p><strong>Predictability is not the binding constraint.</strong> The jittery policy is harder to predict
+  (R² = 0.402 against 0.609) and yet more is recovered from it, because it has more to give. Our earlier
+  expectation that the predictor's accuracy would bound the benefit was wrong, and we report it as such.
+  Delayed filtering fails catastrophically here: 37% of episodes overall, and every episode at 1.0 m/s.</p>
+</section>
+
+<hr class="rule">
+
+<section id="s6">
+  <h2><span class="num">6</span>Discussion and Practical Guidance</h2>
+  <ol>
+    <li><strong>Profile the spectral split before intervening.</strong> One baseline rollout establishes the
+    reachable budget; halving it estimates attainable closed-loop recovery. If the reachable share is small,
+    no command filter will save your motors and the effort belongs on the reward or the posture instead.</li>
+    <li><strong>Do not eliminate phase lag via delay,</strong> and do not use aggressive cutoffs. Evaluate any
+    filter at the top of the speed range, because that is the only place the failure appears.</li>
+    <li><strong>Gate by joint load.</strong> The threshold is <i>τ̄</i> ≈ √Var(<i>τ</i>). Gating cost 2.5
+    percentage points of heat and bought back most of the tracking.</li>
+    <li><strong>Prioritize effort regularization over <code>action_rate</code></strong> [57], [58]. If the goal
+    is to protect motors, our evidence says penalise effort, not action difference.</li>
+    <li><strong>Expect single-digit percentage gains</strong> on a loaded quadruped, and do not attribute them
+    to jitter removal without checking the split.</li>
+  </ol>
+  <div class="callout sig"><p><strong>Where this should pay much better.</strong> The favourable regime — very
+  low steady torque — is not represented on a walking quadruped. It is exactly the condition of the reported
+  G1 failure: an ankle-roll joint on a standing humanoid. That is where the hardware experiment should look
+  first, and it is a prediction this work makes rather than a result it demonstrates.</p></div>
+  <p>The 80% power reduction reported for smoothness regularization on a quadrotor [5] does not transfer, and
+  we can say why: a rotor has almost no steady holding torque, so its <i>τ̄</i><sup>2</sup> term is small, its
+  gait-band term does not exist, and the ripple term dominates by default. A stance-phase knee is the opposite
+  case in every one of those three respects.</p>
+</section>
+
+<hr class="rule">
+
+<section id="s7">
+  <h2><span class="num">7</span>Related Work</h2>
+  <p><strong>Thermal-aware locomotion.</strong> Recent methods add motor temperature to the observation and
+  thermal constraints to the reward [2], or move the correction into a residual policy conditioned on thermal
+  state [3]. Thermal management by posture was earlier posed as a contact-constrained inverse-kinematics
+  problem on a humanoid [9]. Model-free prediction of joint-motor thermal states [52] and lumped-parameter
+  thermal networks [41] supply the modelling layer this work proxies rather than models. All retrain or
+  instrument; our intervention does neither.</p>
+
+  <p><strong>Actuation interfaces.</strong> Actuator Reality Shaping equips each joint with a
+  two-degree-of-freedom controller shaping the physical actuator to match simulation's reference dynamics
+  [10]; high-frequency linear feedback at up to 40 kHz interpolates learned torque policies [11]; commanded
+  accelerations have been constrained to a voltage-realizable set [12]. Actuator networks learned from bench
+  data [22] and domain randomization [34] or online system identification [35] are the standard alternatives.
+  Post-optimization of chunked action sequences exists for manipulation [13], [36], [37], as does a B-spline
+  action representation [14] and real-time chunking, which handles inference latency by inpainting rather than
+  by delaying [38] — the closest prior art to our predictive filter. On cost-constrained quadrupedal hardware
+  a measured transport delay above 50 ms is handled with a forward model and a time-aware network [15].
+  None of these targets electrical loss.</p>
+
+  <p><strong>Smoothness regularization.</strong> CAPS [5], Lipschitz-constrained policies [16], [48], [54] and
+  spectral normalisation [17] all reduce high-frequency content; a benchmark study reports its best hybrid
+  method improving control smoothness by 26.8% for a worst-case 2.8% performance degradation [18], and the
+  regularizer design space continues to be re-examined [49], [50]. None reports motor current or temperature
+  on a legged robot.</p>
+
+  <p><strong>Control rate and discretization.</strong> Robust locomotion has been demonstrated at 8 Hz on
+  ANYmal C [19], [32], with low-rate policies shown to be <em>less</em> sensitive to actuation latency;
+  Q-learning degenerates as the time step shrinks [20]; delayed MDPs admit augmented-state solutions [46],
+  [47]; and policies that choose their own action durations reduce average control frequency without losing
+  reward [21]. To our knowledge no paper reports motor temperature or current as a function of policy control
+  rate.</p>
+
+  <p><strong>Platforms and stacks.</strong> The quasi-direct-drive actuation that makes copper loss the
+  dominant term is established in [30], [31], [56], with series-elastic ANYdrive as the contrasting design
+  [32]. Policies of the kind studied here are trained in <code>legged_gym</code> [25] on Isaac Gym [26],
+  Isaac Lab [27], MuJoCo Playground [28] or mjlab [29], deployed with stacks such as [33], and derive from the
+  teacher-student line of [22], [23], [24].</p>
+</section>
+
+<hr class="rule">
+
+<section id="s8">
+  <h2><span class="num">8</span>Limitations</h2>
+  <p><strong>No hardware.</strong> Everything here is simulation. 𝔼[τ²] is proportional to copper loss only
+  under a constant torque constant; it ignores iron loss, inverter loss and every thermal path. The claims are
+  about a <em>proxy</em>.</p>
+  <p><strong>The single-joint model has no contact.</strong> E1 and E2 use a second-order joint with a constant
+  load. Real stance-phase torque is neither constant nor independent of the command.</p>
+  <p><strong>One robot, one gait family, one policy family,</strong> all from the same training setup on flat
+  terrain.</p>
+  <p><strong>The 5 Hz band split is a modelling choice, and the headline number depends on it.</strong> A lower
+  boundary would make the reachable share larger and a higher one smaller. The 25 Hz boundary, by contrast, is
+  not a choice: it is the command Nyquist. A sweep of the 5 Hz line would make the budget claim considerably
+  more solid, and we have not done it.</p>
+  <p><strong>"Reachable" is an upper bound, not an achievable target.</strong> Some 5–25 Hz torque content is
+  the robot's genuine response to contact, not command jitter, and removing it costs stability. The recovery
+  ratio of about a half may be exactly this: the fraction of the band that is truly discretionary.</p>
+  <p><strong>The reward-ablation evidence is single-seed,</strong> and success is measured as tracking, not as
+  task completion over long horizons.</p>
+  <p><strong>Depth of reading of the cited literature.</strong> Existence, venue and authorship of every
+  reference in §10 were verified by search during preparation. That is a weaker claim than having read each in
+  full, and §7's characterisations should be read accordingly.</p>
+</section>
+
+<hr class="rule">
+
+<section id="s9">
+  <h2><span class="num">9</span>Conclusion</h2>
+  <p class="lead">Actuator overheating in learned legged locomotion decomposes into steady posture torque and
+  dynamic command ripple. Because these components combine in quadrature, command filtering provides
+  meaningful thermal relief only on lightly loaded joints operating below the load crossover threshold. In
+  closed loop, phase lag introduced by smoothing compromises feedback stability at speed, demonstrating that
+  causal predictive filtering with load-dependent gating is required to safely recover actuator thermal
+  margins.</p>
+</section>
+
+<hr class="rule">
+
+<section id="appendix">
+  <h2><span class="num">A</span>Planned additions — not yet run</h2>
+  <div class="tbl"><table>
+    <thead><tr><th>Experiment</th><th>Why it matters</th><th>Result</th></tr></thead>
+    <tbody>
+      <tr><td>A.1 Gait-split sweep, 3–8 Hz</td><td style="text-align:left;white-space:normal">The 18.1% headline depends on the hand-chosen 5 Hz boundary. This is the cheapest way to harden the paper's most attackable claim.</td><td style="color:var(--warn);font-weight:600">pending</td></tr>
+      <tr><td>A.2 Multi-seed reward ablation</td><td style="text-align:left;white-space:normal">§5.2 is single-seed over 8 s. Five seeds, mean ± std.</td><td style="color:var(--warn);font-weight:600">pending</td></tr>
+      <tr><td>A.3 G1 humanoid band decomposition</td><td style="text-align:left;white-space:normal">The introduction leans on a humanoid ankle case the results never touch.</td><td style="color:var(--warn);font-weight:600">pending</td></tr>
+      <tr><td>A.4 Single-joint hardware bench</td><td style="text-align:left;white-space:normal">One motor, a torque load, a current probe. The cheapest falsification of the 3.2 N·m crossover.</td><td style="color:var(--warn);font-weight:600">pending</td></tr>
+      <tr><td>A.5 Posture-matched current comparison</td><td style="text-align:left;white-space:normal">Hold a learned policy and the vendor controller at the <em>same</em> posture, compare I<sub>rms</sub>/Ī per joint. This is the experiment the literature is missing, and a null result is publishable.</td><td style="color:var(--warn);font-weight:600">pending</td></tr>
+      <tr><td>A.6 Slew-rate limiter baseline</td><td style="text-align:left;white-space:normal">The most common deployed smoothing scheme is absent from the comparison set, as is simply retuning k<sub>p</sub>. Reviewers will ask.</td><td style="color:var(--warn);font-weight:600">pending</td></tr>
+    </tbody>
+    <caption>No numbers are entered for these rows. Every quantity in this page traces to
+    <code>paper-command-filtering-draft.md</code>; anything not measured there is marked pending rather than
+    estimated.</caption>
+  </table></div>
+</section>
+
+<hr class="rule">
+
+<section id="flags">
+  <h2><span class="num">⚑</span>Open review flags</h2>
+  <p>Internal contradictions carried over from v1. Numbers are quoted from two places that disagree; neither
+  has been changed, because resolving them requires the source data in <code>exp/</code>, not a judgement call.</p>
+  <div class="tbl"><table>
+    <thead><tr><th>#</th><th>Issue</th><th>Status</th></tr></thead>
+    <tbody>
+      <tr><td>▲1</td><td style="text-align:left;white-space:normal">Predictor R² on the full-reward policy: §5.3 says 0.679, Table 9 and §5.6 say 0.609.</td><td style="color:var(--warn);font-weight:600">open</td></tr>
+      <tr><td>▲2</td><td style="text-align:left;white-space:normal">Zero-phase-delay fall rate: prose says 13%, Table 6 says 0.07, Table 8 averages 0.067.</td><td style="color:var(--warn);font-weight:600">open</td></tr>
+      <tr><td>▲3</td><td style="text-align:left;white-space:normal">Policy-aware vs unaware filter: prose quotes 0.917 / 0.927 / 1.249 / 1.214; Table 6 gives 0.915 / 1.279 / 0.927 / 1.236.</td><td style="color:var(--warn);font-weight:600">open</td></tr>
+      <tr><td>▲4</td><td style="text-align:left;white-space:normal">§4 promises four protocols, labels them E1/E2/E3/E5. Figure filenames use a third numbering.</td><td style="color:var(--warn);font-weight:600">open</td></tr>
+      <tr><td>▲5</td><td style="text-align:left;white-space:normal">§5.2 describes seven ablated policies; Table 2 lists five.</td><td style="color:var(--warn);font-weight:600">open</td></tr>
+      <tr><td>▲6</td><td style="text-align:left;white-space:normal">ρ is defined against the −3 dB bandwidth in §3 but labelled ρ<sub>&gt;5 Hz</sub> in Table 2.</td><td style="color:var(--warn);font-weight:600">open</td></tr>
+      <tr><td>▲7</td><td style="text-align:left;white-space:normal">Reference [15] author list suspected mismatched.</td><td class="hi">resolved — verified correct</td></tr>
+      <tr><td>▲8</td><td style="text-align:left;white-space:normal">Reference count below target.</td><td class="hi">resolved — 21 → 60</td></tr>
+      <tr><td>▲9</td><td style="text-align:left;white-space:normal">Reference [9] venue given as Humanoids.</td><td class="hi">resolved — is IEEE RA-L 4(2), 2019</td></tr>
+      <tr><td>▲10</td><td style="text-align:left;white-space:normal">Reference [2] author list unconfirmed by search.</td><td style="color:var(--warn);font-weight:600">open — marked pending in list</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<hr class="rule">
+
+<section id="refs">
+  <h2><span class="num">10</span>References</h2>
+  <p>All 60 entries verified to exist by search, 2026-09-10. Entries whose author list the search did not
+  expose carry <span class="pend" style="font-family:var(--mono);font-size:11px;color:var(--warn);font-weight:600">[authors: pending]</span>
+  rather than a reconstructed one.</p>
+  <ol class="refs">
+    <li>NVIDIA Research, "Ankle roll motors overheating on G1," GR00T-WholeBodyControl, GitHub issue #174, 2026. Not peer reviewed.</li>
+    <li><span class="pend">[authors: pending]</span>, "Learning thermal-aware locomotion policies for an electrically-actuated quadruped robot," arXiv:2603.01631, 2026.</li>
+    <li>Y. Wan, W. Lin, L. Qian, Y. Zou, W. Wu, S. Liao, C. Zhao, and X. Luo, "Learning to balance motor thermal safety and quadrupedal locomotion performance with residual policy," arXiv:2605.27046, 2026.</li>
+    <li>T. Matsuzawa, K. Irie, T. Yoshida, T. Suzuki, Y. Hara, and M. Tomono, "Long-distance real-world navigation of the legged-wheeled robot Go2-W using deep reinforcement learning," arXiv:2606.21387, 2026.</li>
+    <li>S. Mysore, B. Mabsout, R. Mancuso, and K. Saenko, "Regularizing action policies for smooth control with reinforcement learning," <em>Proc. ICRA</em>, 2021. arXiv:2012.06644.</li>
+    <li>Vendor control-stack reference, this repository, <code>docs/legged-rl-control-stack-reference.md</code>, 2024.</li>
+    <li>maxon motor ag, "EC max 30 Ø30 mm, brushless, 60 W," datasheet, 2024.</li>
+    <li>K. Urs, C. E. Adu, E. J. Rouse, and T. Y. Moore, "Design and characterization of 3D printed, open-source actuators for legged locomotion," <em>Proc. IROS</em>, 2022. arXiv:2202.12395.</li>
+    <li>S. J. Jorgensen, J. Holley, F. Mathis, J. S. Mehling, and L. Sentis, "Thermal recovery of multi-limbed robots with electric actuators," <em>IEEE RA-L</em>, vol. 4, no. 2, pp. 1077–1084, 2019. <span class="fix">[venue corrected]</span></li>
+    <li>S. Yamamori et al., "Actuator reality shaping for zero-shot sim-to-real robot learning," arXiv:2607.02205, 2026.</li>
+    <li>R. Kourdis, M. Stępień, J. Manhes, N. Mansard, S. Tonneau, P. Souères, and T. Flayols, "Very high frequency interpolation for direct torque control," arXiv:2509.24175, 2025.</li>
+    <li>L. Zhang, J. Wang, T. Zhang, Z. Song, X. Zeng, W. Xia, Z. Li, and Y. Liu, "VRA: Grounding discrete-time joint acceleration in voltage-constrained actuation," <em>Proc. RSS</em>, 2026. arXiv:2605.10696.</li>
+    <li>D. Son and S. Park, "LiPo: A lightweight post-optimization framework for smoothing action chunks generated by learned policies," arXiv:2506.05165, 2025.</li>
+    <li>X. Han, H. Xiong, H. Chen, C. Liu, A. Torralba, Y. Zhu, and Y. Du, "B-spline policy: Accelerating manipulation policies via B-spline action representations," arXiv:2607.09648, 2026.</li>
+    <li>J. C. Weddington, B. P. Ölveczky, and S. A. Baccus, "Reinforcement learning on cost-constrained quadrupedal hardware," arXiv:2607.26434, 2026. <span class="fix">[authorship verified]</span></li>
+    <li>Z. Chen, X. He, Y.-J. Wang, Q. Liao, Y. Ze, Z. Li, S. S. Sastry, J. Wu, K. Sreenath, S. Gupta, and X. B. Peng, "Learning smooth humanoid locomotion through Lipschitz-constrained policies," <em>Proc. IROS</em>, 2025. arXiv:2410.11825.</li>
+    <li>J. Shin, W. Cha, D. Kim, J. Cha, and J. Park, "Spectral normalization for Lipschitz-constrained policies on learning humanoid locomotion," arXiv:2504.08246, 2025.</li>
+    <li>G. Christmann, Y.-S. Luo, H. Mandala, and W.-C. Chen, "Benchmarking smoothness and reducing high-frequency oscillations in continuous control policies," <em>Proc. IROS</em>, 2024, pp. 627–634. arXiv:2410.16632.</li>
+    <li>S. Gangapurwala, L. Campanaro, and I. Havoutis, "Learning low-frequency motion control for robust and dynamic robot locomotion," <em>Proc. ICRA</em>, 2023, pp. 5085–5091. arXiv:2209.14887.</li>
+    <li>C. Tallec, L. Blier, and Y. Ollivier, "Making deep Q-learning methods robust to time discretization," <em>Proc. ICML</em>, 2019, pp. 6096–6104. arXiv:1901.09732.</li>
+    <li>A. Sukhija, L. Treven, J. Cheng, F. Dörfler, S. Coros, and A. Krause, "TARC: Time-adaptive robotic control," <em>Proc. NeurIPS</em>, 2025. arXiv:2510.23176.</li>
+    <li>J. Hwangbo et al., "Learning agile and dynamic motor skills for legged robots," <em>Science Robotics</em>, vol. 4, no. 26, eaau5872, 2019.</li>
+    <li>J. Lee, J. Hwangbo, L. Wellhausen, V. Koltun, and M. Hutter, "Learning quadrupedal locomotion over challenging terrain," <em>Science Robotics</em>, vol. 5, no. 47, eabc5986, 2020.</li>
+    <li>T. Miki, J. Lee, J. Hwangbo, L. Wellhausen, V. Koltun, and M. Hutter, "Learning robust perceptive locomotion for quadrupedal robots in the wild," <em>Science Robotics</em>, vol. 7, no. 62, eabk2822, 2022. arXiv:2201.08117.</li>
+    <li>N. Rudin, D. Hoeller, P. Reist, and M. Hutter, "Learning to walk in minutes using massively parallel deep reinforcement learning," <em>Proc. CoRL</em>, PMLR 164, 2022. arXiv:2109.11978.</li>
+    <li>V. Makoviychuk et al., "Isaac Gym: High performance GPU-based physics simulation for robot learning," arXiv:2108.10470, 2021.</li>
+    <li>M. Mittal et al., "Orbit: A unified simulation framework for interactive robot learning environments," <em>IEEE RA-L</em>, 2023. arXiv:2301.04195.</li>
+    <li>K. Zakka et al., "MuJoCo Playground," arXiv:2502.08844, 2025.</li>
+    <li>K. Zakka, Q. Liao, B. Yi, L. Le Lay, K. Sreenath, and P. Abbeel, "mjlab: A lightweight framework for GPU-accelerated robot learning," arXiv:2601.22074, 2026.</li>
+    <li>P. M. Wensing, A. Wang, S. Seok, D. Otten, J. Lang, and S. Kim, "Proprioceptive actuator design in the MIT Cheetah," <em>IEEE T-RO</em>, vol. 33, no. 3, pp. 509–522, 2017.</li>
+    <li>B. Katz, J. Di Carlo, and S. Kim, "Mini Cheetah: A platform for pushing the limits of dynamic quadruped control," <em>Proc. ICRA</em>, 2019.</li>
+    <li>M. Hutter et al., "ANYmal — a highly mobile and dynamic quadrupedal robot," <em>Proc. IROS</em>, 2016.</li>
+    <li>G. B. Margolis and P. Agrawal, "Walk these ways: Tuning robot control for generalization with multiplicity of behavior," <em>Proc. CoRL</em>, PMLR 205, pp. 22–31, 2023. arXiv:2212.03238.</li>
+    <li>J. Tobin, R. Fong, A. Ray, J. Schneider, W. Zaremba, and P. Abbeel, "Domain randomization for transferring deep neural networks from simulation to the real world," arXiv:1703.06907, 2017.</li>
+    <li>W. Yu, J. Tan, C. K. Liu, and G. Turk, "Preparing for the unknown: Learning a universal policy with online system identification," <em>Proc. RSS</em>, 2017. arXiv:1702.02453.</li>
+    <li>T. Z. Zhao, V. Kumar, S. Levine, and C. Finn, "Learning fine-grained bimanual manipulation with low-cost hardware," arXiv:2304.13705, 2023.</li>
+    <li>C. Chi, Z. Xu, S. Feng, E. Cousineau, Y. Du, B. Burchfiel, R. Tedrake, and S. Song, "Diffusion policy: Visuomotor policy learning via action diffusion," <em>IJRR</em>, 2025. arXiv:2303.04137.</li>
+    <li>K. Black et al., "Real-time execution of action chunking flow policies," <em>Proc. NeurIPS</em>, 2025. arXiv:2506.07339.</li>
+    <li>O. Wallscheid, "Thermal monitoring of electric motors: State-of-the-art review and future challenges," <em>IEEE Open J. Industry Applications</em>, 2021.</li>
+    <li>W. Kirchgässner, O. Wallscheid, and J. Böcker, "Estimating electric motor temperatures with deep residual machine learning," <em>IEEE T-PEL</em>, vol. 36, no. 7, pp. 7480–7488, 2021.</li>
+    <li>W. Kirchgässner et al., "Thermal neural networks: Lumped-parameter thermal modeling with state-space machine learning," arXiv:2103.16323, 2021.</li>
+    <li>F. Gustafsson, "Determining the initial states in forward-backward filtering," <em>IEEE T-SP</em>, vol. 44, no. 4, pp. 988–992, 1996.</li>
+    <li>F. J. Harris, "On the use of windows for harmonic analysis with the discrete Fourier transform," <em>Proc. IEEE</em>, vol. 66, no. 1, pp. 51–83, 1978.</li>
+    <li>J. Makhoul, "Linear prediction: A tutorial review," <em>Proc. IEEE</em>, vol. 63, no. 4, pp. 561–580, 1975.</li>
+    <li>N. Cliff, "Dominance statistics: Ordinal analyses to answer ordinal questions," <em>Psychological Bulletin</em>, vol. 114, no. 3, pp. 494–509, 1993.</li>
+    <li>B. Chen, M. Xu, L. Li, and D. Zhao, "Delay-aware model-based reinforcement learning for continuous control," <em>Neurocomputing</em>, vol. 450, pp. 119–128, 2021. arXiv:2005.05440.</li>
+    <li><span class="pend">[authors: pending]</span>, "Delays in reinforcement learning," arXiv:2309.11096, 2023.</li>
+    <li><span class="pend">[authors: pending]</span>, "L2C2: Locally Lipschitz continuous constraint towards stable and smooth reinforcement learning," arXiv:2202.07152, 2022.</li>
+    <li><span class="pend">[authors: pending]</span>, "Redesigning regularization for effective policy smoothing," arXiv:2606.13169, 2026.</li>
+    <li><span class="pend">[authors: pending]</span>, "Stabilizing the Q-gradient field for policy smoothness in actor-critic methods," arXiv:2601.22970, 2026.</li>
+    <li><span class="pend">[authors: pending]</span>, "Actuator-constrained reinforcement learning for high-speed quadrupedal locomotion," arXiv:2312.17507, 2023.</li>
+    <li><span class="pend">[authors: pending]</span>, "Deep learning for model-free prediction of thermal states of robot joint motors," arXiv:2509.12739, 2025.</li>
+    <li><span class="pend">[authors: pending]</span>, "Robust reinforcement learning-based locomotion for resource-constrained quadrupeds with exteroceptive sensing," arXiv:2505.12537, 2025.</li>
+    <li><span class="pend">[authors: pending]</span>, "Task-specified compliance bounds for humanoids via Lipschitz-constrained policies," arXiv:2603.16180, 2026.</li>
+    <li><span class="pend">[authors: pending]</span>, "Concurrent training of a control policy and a state estimator for dynamic and robust legged locomotion," arXiv:2202.05481, 2022.</li>
+    <li><span class="pend">[authors: pending]</span>, "Alternative metrics to select motors for quasi-direct drive actuators," arXiv:2202.12365, 2022.</li>
+    <li><span class="pend">[authors: pending]</span>, "Adaptive energy regularization for autonomous gait transition and energy-efficient quadruped locomotion," arXiv:2403.20001, 2024.</li>
+    <li><span class="pend">[authors: pending]</span>, "Guiding energy-efficient locomotion through impact mitigation rewards," arXiv:2510.09543, 2025.</li>
+    <li><span class="pend">[authors: pending]</span>, "Energy-efficient quadruped locomotion with compliant feet," arXiv:2605.14411, 2026.</li>
+    <li><span class="pend">[authors: pending]</span>, "Energy efficient control of electric motors," arXiv:2109.11113, 2021.</li>
+  </ol>
+</section>
+
+<footer>
+  Draft v2 · rendered 2026-09-10 · every quantity on this page traces to <code>paper-command-filtering-draft.md</code><br>
+  Figures 1–4 hand-authored SVG (<code>fig/</code>) · Figures E1–E4 from <code>pic/</code> · references verified by search, see <code>references-60.md</code><br>
+  paper-comic Step 5 blocked: no image-generation backend installed. Plan and prompts in <code>paper-comic-plan.md</code>.
+</footer>
+
+</main>
+</div>
+
+<script>
+(function(){
+  var root=document.documentElement,btn=document.getElementById('ft'),on=true;
+  try{ if(localStorage.getItem('flags')==='0') on=false; }catch(e){}
+  function apply(){
+    root.classList.toggle('flags',on);
+    btn.setAttribute('aria-pressed',String(on));
+    btn.textContent=on?'⚑ Review flags: on':'⚑ Review flags: off';
+    try{ localStorage.setItem('flags',on?'1':'0'); }catch(e){}
+  }
+  btn.addEventListener('click',function(){ on=!on; apply(); });
+  apply();
+})();
+</script>

@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 940 430" width="940" height="430" role="img" aria-label="四頻段熱預算：良好正則化的 policy 中，姿態佔 31.3%、步態帶佔 50.6%、5 到 25 赫茲的帶內抖動佔 16.5%、零階保持諧波僅佔 1.6%，濾波器可觸及共 18.1%；移除 effort 獎勵項後可觸及份額升至 43.3%，而零階保持諧波仍只有 2.6%。" font-family="ui-sans-serif, system-ui, -apple-system, 'Noto Sans TC', sans-serif">
+
+  <text x="40" y="30" font-size="15" font-weight="600" fill="currentColor">大家指著的 ZOH 階梯只佔 1.6% —— 浪費其實在 5–25 Hz</text>
+
+  <!-- legend -->
+  <g font-size="11.5" fill="currentColor">
+    <rect x="40" y="48" width="13" height="13" fill="currentColor" opacity="0.16"/><text x="59" y="59">DC 姿態</text>
+    <rect x="140" y="48" width="13" height="13" fill="currentColor" opacity="0.30"/><text x="159" y="59">0–5 Hz 步態</text>
+    <rect x="258" y="48" width="13" height="13" fill="var(--sig, #1F6F8B)" opacity="0.85"/><text x="277" y="59">5–25 Hz in-band jitter</text>
+    <rect x="428" y="48" width="13" height="13" fill="var(--heat, #C4351F)"/><text x="447" y="59">&gt; 25 Hz ZOH 諧波</text>
+  </g>
+  <text x="588" y="59" font-size="11.5" fill="currentColor" opacity="0.7">後兩者之和 = 濾波器可觸及的全部預算</text>
+
+  <!-- ================= bar A ================= -->
+  <text x="40" y="98" font-size="13" font-weight="600" fill="currentColor">full reward</text>
+  <text x="40" y="116" font-size="11.5" fill="currentColor" opacity="0.75">ZOH 熱 255.9</text>
+
+  <rect x="160" y="86" width="187.8" height="54" fill="currentColor" opacity="0.16"/>
+  <rect x="347.8" y="86" width="303.6" height="54" fill="currentColor" opacity="0.30"/>
+  <rect x="651.4" y="86" width="99" height="54" fill="var(--sig, #1F6F8B)" opacity="0.85"/>
+  <rect x="750.4" y="86" width="9.6" height="54" fill="var(--heat, #C4351F)"/>
+  <rect x="160" y="86" width="600" height="54" fill="none" stroke="currentColor" stroke-width="1.4"/>
+
+  <text x="253.9" y="118" text-anchor="middle" font-size="12.5" font-weight="600" fill="currentColor">31.3%</text>
+  <text x="499.6" y="118" text-anchor="middle" font-size="12.5" font-weight="600" fill="currentColor">50.6%</text>
+  <text x="700.9" y="118" text-anchor="middle" font-size="12.5" font-weight="600" fill="currentColor">16.5%</text>
+
+  <path d="M755 86 L755 68 L800 68" fill="none" stroke="var(--heat, #C4351F)" stroke-width="1.2"/>
+  <text x="806" y="72" font-size="12" font-weight="600" fill="var(--heat, #C4351F)">1.6%</text>
+
+  <path d="M651.4 146 L651.4 156 L760 156 L760 146" fill="none" stroke="currentColor" stroke-width="1.3"/>
+  <text x="705.7" y="174" text-anchor="middle" font-size="13" font-weight="700" fill="currentColor">可觸及 18.1%</text>
+
+  <!-- ================= bar B ================= -->
+  <text x="40" y="238" font-size="13" font-weight="600" fill="currentColor">no torques + energy</text>
+  <text x="40" y="256" font-size="11.5" fill="currentColor" opacity="0.75">ZOH 熱 376.3 (+47%)</text>
+
+  <rect x="160" y="226" width="162" height="54" fill="currentColor" opacity="0.16"/>
+  <rect x="322" y="226" width="178.2" height="54" fill="currentColor" opacity="0.30"/>
+  <rect x="500.2" y="226" width="244.2" height="54" fill="var(--sig, #1F6F8B)" opacity="0.85"/>
+  <rect x="744.4" y="226" width="15.6" height="54" fill="var(--heat, #C4351F)"/>
+  <rect x="160" y="226" width="600" height="54" fill="none" stroke="currentColor" stroke-width="1.4"/>
+
+  <text x="241" y="258" text-anchor="middle" font-size="12.5" font-weight="600" fill="currentColor">27.0%</text>
+  <text x="411.1" y="258" text-anchor="middle" font-size="12.5" font-weight="600" fill="currentColor">29.7%</text>
+  <text x="622.3" y="258" text-anchor="middle" font-size="12.5" font-weight="600" fill="currentColor">40.7%</text>
+
+  <path d="M752 226 L752 208 L800 208" fill="none" stroke="var(--heat, #C4351F)" stroke-width="1.2"/>
+  <text x="806" y="212" font-size="12" font-weight="600" fill="var(--heat, #C4351F)">2.6%</text>
+
+  <path d="M500.2 286 L500.2 296 L760 296 L760 286" fill="none" stroke="currentColor" stroke-width="1.3"/>
+  <text x="630.1" y="314" text-anchor="middle" font-size="13" font-weight="700" fill="currentColor">可觸及 43.3%</text>
+
+  <!-- shift arrow -->
+  <path d="M651.4 182 L651.4 196 L520 196 L520 216" fill="none" stroke="var(--sig, #1F6F8B)" stroke-width="1.6" stroke-dasharray="5 3"/>
+  <text x="612" y="210" text-anchor="end" font-size="11.5" font-weight="600" fill="var(--sig, #1F6F8B)">移除 effort 項 → 25 個百分點的熱搬進可觸及帶</text>
+
+  <!-- ================= bottom row ================= -->
+  <line x1="40" y1="338" x2="900" y2="338" stroke="currentColor" stroke-width="1" opacity="0.25"/>
+
+  <text x="40" y="362" font-size="12.5" font-weight="600" fill="currentColor">predictive filter 實際拿回：</text>
+
+  <text x="270" y="362" font-size="12" fill="currentColor">full reward</text>
+  <text x="270" y="384" font-size="17" font-weight="700" fill="var(--sig, #1F6F8B)">47%</text>
+  <text x="318" y="384" font-size="12" fill="currentColor" opacity="0.75">of 18.1%  →  H/H₀ = 0.915</text>
+
+  <text x="270" y="410" font-size="12" fill="currentColor">no effort terms</text>
+  <text x="390" y="410" font-size="17" font-weight="700" fill="var(--sig, #1F6F8B)">54%</text>
+  <text x="438" y="410" font-size="12" fill="currentColor" opacity="0.75">of 43.3%  →  H/H₀ = 0.765</text>
+
+  <text x="640" y="384" font-size="12" fill="currentColor" opacity="0.85">原始節省相差近三倍，回收「比例」卻穩定。</text>
+  <text x="640" y="402" font-size="12" fill="currentColor" opacity="0.85">量一次基線 rollout 的頻帶切分、把可觸及</text>
+  <text x="640" y="420" font-size="12" fill="currentColor" opacity="0.85">份額除以二，就能在動手前預估收益。</text>
+</svg>

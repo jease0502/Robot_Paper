@@ -1,0 +1,98 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 940 480" width="940" height="480" role="img" aria-label="正交交越圖：銅損由姿態項與漣漪項平方相加，兩者所佔比例隨關節靜態扭矩變化並在 3.2 牛頓米處交會；Unitree Go1 的髖與大腿關節落在交越點左側由漣漪主導，小腿關節落在右側由姿態主導，與各關節族實測的可觸及熱佔比一致。" font-family="ui-sans-serif, system-ui, -apple-system, 'Noto Sans TC', sans-serif">
+  <defs>
+    <marker id="c-ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+    </marker>
+  </defs>
+
+  <text x="90" y="30" font-size="14.5" font-weight="600" fill="currentColor">H ∝ E[τ²] = τ̄²  +  Var(τ)   ——   兩項平方相加，誰主導由關節負載決定</text>
+
+  <!-- axes -->
+  <line x1="90" y1="60" x2="90" y2="360" stroke="currentColor" stroke-width="1.4"/>
+  <line x1="90" y1="360" x2="632" y2="360" stroke="currentColor" stroke-width="1.4"/>
+
+  <!-- y ticks -->
+  <line x1="84" y1="60" x2="90" y2="60" stroke="currentColor" stroke-width="1.2"/>
+  <line x1="84" y1="210" x2="90" y2="210" stroke="currentColor" stroke-width="1.2"/>
+  <line x1="84" y1="360" x2="90" y2="360" stroke="currentColor" stroke-width="1.2"/>
+  <text x="78" y="64" text-anchor="end" font-size="11" fill="currentColor" opacity="0.8">100%</text>
+  <text x="78" y="214" text-anchor="end" font-size="11" fill="currentColor" opacity="0.8">50%</text>
+  <text x="78" y="364" text-anchor="end" font-size="11" fill="currentColor" opacity="0.8">0</text>
+  <text x="34" y="215" text-anchor="middle" font-size="11.5" fill="currentColor" opacity="0.8" transform="rotate(-90 34 215)">佔銅損比例</text>
+
+  <!-- x ticks -->
+  <g font-size="11" fill="currentColor" opacity="0.8" text-anchor="middle">
+    <line x1="90" y1="360" x2="90" y2="366" stroke="currentColor" stroke-width="1.2"/><text x="90" y="380">0</text>
+    <line x1="222.5" y1="360" x2="222.5" y2="366" stroke="currentColor" stroke-width="1.2"/><text x="222.5" y="380">2</text>
+    <line x1="355" y1="360" x2="355" y2="366" stroke="currentColor" stroke-width="1.2"/><text x="355" y="380">4</text>
+    <line x1="487.5" y1="360" x2="487.5" y2="366" stroke="currentColor" stroke-width="1.2"/><text x="487.5" y="380">6</text>
+    <line x1="620" y1="360" x2="620" y2="366" stroke="currentColor" stroke-width="1.2"/><text x="620" y="380">8</text>
+  </g>
+  <text x="361" y="400" text-anchor="middle" font-size="12" fill="currentColor">關節靜態扭矩  τ̄  (N·m)</text>
+
+  <!-- crossover line -->
+  <line x1="302" y1="52" x2="302" y2="452" stroke="var(--heat, #C4351F)" stroke-width="1.6" stroke-dasharray="6 4"/>
+  <circle cx="302" cy="210" r="5" fill="var(--heat, #C4351F)"/>
+  <text x="310" y="48" font-size="12.5" font-weight="600" fill="var(--heat, #C4351F)">交越點 τ̄ = √Var(τ) = 3.2 N·m</text>
+
+  <!-- ripple share curve -->
+  <polyline fill="none" stroke="var(--sig, #1F6F8B)" stroke-width="2.4"
+    points="90,60 123.1,67.1 156.3,86.7 189.4,114 222.5,144.3 255.6,173.7 288.8,200.4 302,210 321.9,223.5 355,243 388.1,259.2 421.3,272.7 454.4,284.1 487.5,293.7 520.6,301.5 553.8,308.1 586.9,313.8 620,318.6"/>
+  <!-- posture share curve -->
+  <polyline fill="none" stroke="currentColor" stroke-width="2.4"
+    points="90,360 123.1,352.9 156.3,333.3 189.4,306 222.5,275.7 255.6,246.3 288.8,219.6 302,210 321.9,196.5 355,177 388.1,160.8 421.3,147.3 454.4,135.9 487.5,126.3 520.6,118.5 553.8,111.9 586.9,106.2 620,101.4"/>
+
+  <text x="150" y="78" font-size="12" font-weight="600" fill="var(--sig, #1F6F8B)">漣漪 Var(τ)</text>
+  <text x="150" y="352" font-size="12" font-weight="600" fill="currentColor">姿態 τ̄²</text>
+  <text x="628" y="105" font-size="12" font-weight="600" fill="currentColor">姿態</text>
+  <text x="628" y="322" font-size="12" font-weight="600" fill="var(--sig, #1F6F8B)">漣漪</text>
+
+  <text x="196" y="188" text-anchor="middle" font-size="11.5" fill="currentColor" opacity="0.8">濾波有得賺</text>
+  <text x="470" y="188" text-anchor="middle" font-size="11.5" fill="currentColor" opacity="0.8">濾波幾乎無效</text>
+
+  <!-- ===== Go1 joint families ===== -->
+  <text x="90" y="428" font-size="12" font-weight="600" fill="currentColor">Go1 實測 mean |τ| 落點：</text>
+
+  <rect x="172.2" y="440" width="15.9" height="16" fill="var(--sig, #1F6F8B)"/>
+  <text x="180" y="472" text-anchor="middle" font-size="11" font-weight="600" fill="currentColor">髖</text>
+
+  <rect x="222.5" y="440" width="39.1" height="16" fill="var(--sig, #1F6F8B)" opacity="0.62"/>
+  <text x="242" y="472" text-anchor="middle" font-size="11" font-weight="600" fill="currentColor">大腿</text>
+
+  <rect x="479.6" y="440" width="66.2" height="16" fill="currentColor" opacity="0.45"/>
+  <text x="513" y="472" text-anchor="middle" font-size="11" font-weight="600" fill="currentColor">小腿（膝）</text>
+
+  <!-- ===== right annotation column ===== -->
+  <line x1="668" y1="52" x2="668" y2="452" stroke="currentColor" stroke-width="1" opacity="0.25"/>
+
+  <text x="690" y="70" font-size="13" font-weight="600" fill="currentColor">實測證實了這個排序</text>
+  <text x="690" y="90" font-size="11.5" fill="currentColor" opacity="0.78">濾波器可觸及的熱佔比，逐關節族：</text>
+
+  <g font-size="12">
+    <rect x="690" y="106" width="14" height="14" fill="var(--sig, #1F6F8B)"/>
+    <text x="712" y="118" fill="currentColor" font-weight="600">髖 (1.24–1.48 N·m)</text>
+    <text x="712" y="136" fill="var(--sig, #1F6F8B)" font-weight="600" font-size="15">33–45%</text>
+
+    <rect x="690" y="158" width="14" height="14" fill="var(--sig, #1F6F8B)" opacity="0.62"/>
+    <text x="712" y="170" fill="currentColor" font-weight="600">大腿 (2.00–2.59 N·m)</text>
+    <text x="712" y="188" fill="var(--sig, #1F6F8B)" font-weight="600" font-size="15">20–32%</text>
+
+    <rect x="690" y="210" width="14" height="14" fill="currentColor" opacity="0.45"/>
+    <text x="712" y="222" fill="currentColor" font-weight="600">小腿 (5.88–6.88 N·m)</text>
+    <text x="712" y="240" fill="currentColor" font-weight="600" font-size="15">14–17%</text>
+  </g>
+
+  <line x1="690" y1="264" x2="912" y2="264" stroke="currentColor" stroke-width="1" opacity="0.25"/>
+
+  <text x="690" y="288" font-size="12" font-weight="600" fill="currentColor">12 個關節中有 8 個在交越點以下，</text>
+  <text x="690" y="306" font-size="12" font-weight="600" fill="currentColor">4 個膝關節在以上。</text>
+
+  <text x="690" y="336" font-size="11.5" fill="currentColor" opacity="0.82">這解釋了文獻中的矛盾：「姿態派」與</text>
+  <text x="690" y="353" font-size="11.5" fill="currentColor" opacity="0.82">「抖動派」都對，只是在講不同關節。</text>
+  <text x="690" y="376" font-size="11.5" fill="currentColor" opacity="0.82">支持抖動說最有力的 G1 案例是</text>
+  <text x="690" y="393" font-size="11.5" fill="currentColor" opacity="0.82">ankle roll —— 人形腿上靜態負載</text>
+  <text x="690" y="410" font-size="11.5" fill="currentColor" opacity="0.82">最小的關節之一。</text>
+
+  <text x="690" y="440" font-size="11" fill="currentColor" opacity="0.6">曲線為 r = Var/(τ̄²+Var) 的定義式，</text>
+  <text x="690" y="455" font-size="11" fill="currentColor" opacity="0.6">非擬合資料；落點與佔比為實測值。</text>
+</svg>

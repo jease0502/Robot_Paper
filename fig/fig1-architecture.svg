@@ -1,0 +1,116 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1180 500" width="1180" height="500" role="img" aria-label="系統架構：凍結的 policy 以 50 Hz 輸出關節位置目標，經 command filter（AR(8) 預測、對稱 Hann kernel、依關節負載的 gate）、零階保持、馬達端 500 Hz PD 迴路產生關節扭矩，扭矩決定銅損發熱並被分解為四個頻帶；觀測回授構成閉迴路，濾波器加入的延遲會從此迴路的穩定裕度扣除。" font-family="ui-sans-serif, system-ui, -apple-system, 'Noto Sans TC', sans-serif">
+  <defs>
+    <marker id="a1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+    </marker>
+    <marker id="a1h" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="var(--heat, #C4351F)"/>
+    </marker>
+    <marker id="a1f" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="var(--sig, #1F6F8B)"/>
+    </marker>
+  </defs>
+
+  <!-- ============ forward chain ============ -->
+  <!-- policy -->
+  <rect x="24" y="88" width="140" height="72" rx="5" fill="none" stroke="currentColor" stroke-width="1.6"/>
+  <text x="94" y="118" text-anchor="middle" font-size="14" font-weight="600" fill="currentColor">Policy π</text>
+  <text x="94" y="137" text-anchor="middle" font-size="12" fill="currentColor" opacity="0.75">weights frozen</text>
+  <text x="94" y="153" text-anchor="middle" font-size="11.5" font-weight="600" fill="var(--sig, #1F6F8B)">50 Hz</text>
+
+  <line x1="164" y1="124" x2="230" y2="124" stroke="currentColor" stroke-width="1.6" marker-end="url(#a1)"/>
+  <text x="197" y="115" text-anchor="middle" font-size="11.5" fill="currentColor" opacity="0.8">q*ₜ</text>
+
+  <!-- filter group -->
+  <rect x="236" y="52" width="372" height="146" rx="7" fill="none" stroke="var(--sig, #1F6F8B)" stroke-width="1.5" stroke-dasharray="6 4"/>
+  <text x="422" y="43" text-anchor="middle" font-size="12.5" font-weight="600" fill="var(--sig, #1F6F8B)">command filter — 本文的介入點（policy 不重訓）</text>
+
+  <rect x="250" y="96" width="104" height="56" rx="4" fill="none" stroke="currentColor" stroke-width="1.4"/>
+  <text x="302" y="119" text-anchor="middle" font-size="12.5" font-weight="600" fill="currentColor">AR(8)</text>
+  <text x="302" y="136" text-anchor="middle" font-size="10.5" fill="currentColor" opacity="0.75">預測 2 步</text>
+
+  <line x1="354" y1="124" x2="364" y2="124" stroke="currentColor" stroke-width="1.4" marker-end="url(#a1)"/>
+
+  <rect x="366" y="96" width="104" height="56" rx="4" fill="none" stroke="currentColor" stroke-width="1.4"/>
+  <text x="418" y="119" text-anchor="middle" font-size="12.5" font-weight="600" fill="currentColor">Hann kernel</text>
+  <text x="418" y="136" text-anchor="middle" font-size="10.5" fill="currentColor" opacity="0.75">對稱、零相位</text>
+
+  <line x1="470" y1="124" x2="480" y2="124" stroke="currentColor" stroke-width="1.4" marker-end="url(#a1)"/>
+
+  <rect x="482" y="96" width="112" height="56" rx="4" fill="none" stroke="var(--sig, #1F6F8B)" stroke-width="1.8"/>
+  <text x="538" y="119" text-anchor="middle" font-size="12.5" font-weight="600" fill="currentColor">load gate</text>
+  <text x="538" y="136" text-anchor="middle" font-size="10.5" fill="currentColor" opacity="0.75">τ̄ &lt; 3.2 N·m 才濾</text>
+
+  <text x="422" y="184" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.72">不付延遲：先估出對稱核所需的未來樣本，而不是等它到</text>
+
+  <line x1="608" y1="124" x2="674" y2="124" stroke="currentColor" stroke-width="1.6" marker-end="url(#a1)"/>
+  <text x="641" y="115" text-anchor="middle" font-size="11.5" fill="currentColor" opacity="0.8">q̃*ₜ</text>
+
+  <!-- ZOH -->
+  <rect x="680" y="88" width="112" height="72" rx="5" fill="none" stroke="currentColor" stroke-width="1.6"/>
+  <text x="736" y="115" text-anchor="middle" font-size="13.5" font-weight="600" fill="currentColor">ZOH</text>
+  <text x="736" y="133" text-anchor="middle" font-size="10.5" fill="currentColor" opacity="0.75">保持 10 ticks</text>
+  <text x="736" y="149" text-anchor="middle" font-size="10.5" fill="currentColor" opacity="0.75">階梯 → kₚ·Δq 暫態</text>
+
+  <line x1="792" y1="124" x2="846" y2="124" stroke="currentColor" stroke-width="1.6" marker-end="url(#a1)"/>
+
+  <!-- PD -->
+  <rect x="852" y="88" width="140" height="72" rx="5" fill="none" stroke="currentColor" stroke-width="1.6"/>
+  <text x="922" y="115" text-anchor="middle" font-size="13.5" font-weight="600" fill="currentColor">馬達端 PD</text>
+  <text x="922" y="133" text-anchor="middle" font-size="11.5" font-weight="600" fill="var(--sig, #1F6F8B)">500 Hz</text>
+  <text x="922" y="150" text-anchor="middle" font-size="10.5" fill="currentColor" opacity="0.75">在驅動器上，不在 policy</text>
+
+  <line x1="992" y1="124" x2="1038" y2="124" stroke="currentColor" stroke-width="1.6" marker-end="url(#a1)"/>
+
+  <!-- joint -->
+  <rect x="1044" y="88" width="112" height="72" rx="5" fill="none" stroke="currentColor" stroke-width="1.6"/>
+  <text x="1100" y="118" text-anchor="middle" font-size="13.5" font-weight="600" fill="currentColor">關節 + 馬達</text>
+  <text x="1100" y="137" text-anchor="middle" font-size="10.5" fill="currentColor" opacity="0.75">Go1，12 DoF</text>
+
+  <!-- ============ torque tap ============ -->
+  <line x1="1100" y1="160" x2="1100" y2="284" stroke="var(--heat, #C4351F)" stroke-width="1.8" marker-end="url(#a1h)"/>
+  <text x="1112" y="205" font-size="12.5" font-weight="600" fill="var(--heat, #C4351F)">τ(t)</text>
+  <circle cx="1100" cy="228" r="3.5" fill="var(--heat, #C4351F)"/>
+
+  <!-- branch to band decomposition -->
+  <path d="M1100 228 L440 228 L440 296" fill="none" stroke="var(--heat, #C4351F)" stroke-width="1.5" marker-end="url(#a1h)"/>
+  <text x="770" y="219" text-anchor="middle" font-size="11.5" fill="var(--heat, #C4351F)">四頻段分解（Parseval，四項精確相加）</text>
+
+  <!-- heat proxy box -->
+  <rect x="900" y="284" width="256" height="68" rx="5" fill="none" stroke="var(--heat, #C4351F)" stroke-width="1.8"/>
+  <text x="1028" y="311" text-anchor="middle" font-size="13" font-weight="600" fill="currentColor">銅損代理量</text>
+  <text x="1028" y="333" text-anchor="middle" font-size="13" fill="currentColor" font-style="italic">H = (1/T) ∫ τ² dt   ∝ I²ᵣₘₛR</text>
+
+  <!-- ============ band strip ============ -->
+  <rect x="140" y="302" width="187.8" height="46" fill="currentColor" opacity="0.16"/>
+  <rect x="327.8" y="302" width="303.6" height="46" fill="currentColor" opacity="0.30"/>
+  <rect x="631.4" y="302" width="99" height="46" fill="var(--sig, #1F6F8B)" opacity="0.85"/>
+  <rect x="730.4" y="302" width="9.6" height="46" fill="var(--heat, #C4351F)"/>
+  <rect x="140" y="302" width="600" height="46" fill="none" stroke="currentColor" stroke-width="1.4"/>
+
+  <text x="233" y="330" text-anchor="middle" font-size="12" font-weight="600" fill="currentColor">DC  31.3%</text>
+  <text x="479" y="330" text-anchor="middle" font-size="12" font-weight="600" fill="currentColor">0–5 Hz  gait  50.6%</text>
+
+  <text x="233" y="368" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.75">姿態：撐住身體</text>
+  <text x="479" y="368" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.75">走路本來就需要的扭矩調變</text>
+
+  <!-- jitter label with leader -->
+  <line x1="681" y1="348" x2="681" y2="382" stroke="var(--sig, #1F6F8B)" stroke-width="1.2"/>
+  <text x="681" y="396" text-anchor="middle" font-size="12" font-weight="600" fill="var(--sig, #1F6F8B)">5–25 Hz  16.5%</text>
+  <text x="681" y="412" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.75">in-band jitter — 浪費真正在這裡</text>
+
+  <!-- zoh sliver leader -->
+  <path d="M735 302 L735 286 L806 286" fill="none" stroke="var(--heat, #C4351F)" stroke-width="1.2"/>
+  <text x="812" y="282" font-size="12" font-weight="600" fill="var(--heat, #C4351F)">&gt; 25 Hz  1.6%</text>
+  <text x="812" y="297" font-size="11" fill="currentColor" opacity="0.75">ZOH 階梯自己的諧波</text>
+
+  <!-- reachable bracket -->
+  <path d="M631.4 296 L631.4 288 L740 288 L740 296" fill="none" stroke="currentColor" stroke-width="1.3"/>
+  <text x="686" y="280" text-anchor="middle" font-size="11.5" font-weight="600" fill="currentColor">濾波器可觸及 = 18.1%</text>
+
+  <!-- ============ feedback ============ -->
+  <path d="M1060 160 L1060 438 L94 438 L94 166" fill="none" stroke="var(--sig, #1F6F8B)" stroke-width="1.8" stroke-dasharray="7 4" marker-end="url(#a1f)"/>
+  <rect x="392" y="426" width="316" height="24" fill="var(--surface, #ffffff)"/>
+  <text x="550" y="443" text-anchor="middle" font-size="12.5" font-weight="600" fill="var(--sig, #1F6F8B)">觀測回授 (50 Hz)</text>
+  <text x="550" y="474" text-anchor="middle" font-size="12" fill="currentColor" opacity="0.85">policy 本身就是回授控制器 —— 在這條路徑上為了換零相位而多加的 40 ms，直接從穩定裕度扣除</text>
+</svg>
