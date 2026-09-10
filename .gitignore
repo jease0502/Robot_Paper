@@ -11,3 +11,13 @@ figsrc/out/
 
 # local preview scaffolding
 .claude/
+
+# LaTeX build artefacts
+icra/*.aux
+icra/*.log
+icra/*.out
+icra/*.fls
+icra/*.fdb_latexmk
+icra/*.synctex.gz
+icra/build.log
+icra/main.pdf
