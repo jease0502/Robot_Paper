@@ -51,6 +51,7 @@
 % independently and its switch says what is lost. Rebuild to see the count.
 %
 % off by default: the raw plots whose numbers a table already carries.
+\newif\ifshowLoadTable  \showLoadTablefalse   % off: loses the raw E1 sweep grid
 \newif\ifshowFilterSchematic  \showFilterSchematicfalse   % off: loses the kernel-placement schematic; the three schemes are described in the text
 \newif\ifshowBandTable  \showBandTablefalse   % off: loses the four-band table; the same split is in Fig. 3 and in Table 5
 \newif\ifshowOpenLoopTable  \showOpenLoopTablefalse   % off: loses the open-loop replay table; its two conclusions are stated in the text
@@ -157,10 +158,11 @@ rate at operating speed (1.0\,m/s).
 predictive compensator paired with joint-load gating that eliminates phase lag,
 safely recovering 47--54\% of the reachable thermal budget across diverse
 checkpoints without retraining or stability loss.
-\item \textbf{Regularization diagnostics.} We demonstrate that conventional
-\texttt{action\_rate} penalties exert minimal authority over command-side thermal
-load ($+8\%$ step transient when ablated), whereas direct effort penalties dictate
-the accessible thermal budget ($+89\%$).
+\item \textbf{Regularization diagnostics.} Across five seeds we find no
+measurable authority of the conventional \texttt{action\_rate} penalty over
+command-side thermal load ($+5\% \pm 6$ when ablated, an interval containing
+zero), whereas direct effort penalties dictate the accessible thermal budget
+($+74\% \pm 23$, positive in every seed).
 \end{itemize}
 
 \section{Actuation Pipeline and Problem Formulation}
@@ -322,8 +324,9 @@ half that has not happened yet.}
 \subsection{Load-Dependent Thermal Crossover}
 
 Holding kinematic motion amplitude constant, the thermal penalty of out-of-band
-command power scales inversely with static load (Table~\ref{tab:e1}).
+command power scales inversely with static load\ifshowLoadTable\ (Table~\ref{tab:e1})\fi.
 
+\ifshowLoadTable  % off: loses the raw E1 sweep grid; Sec. V-A states both endpoints
 \begin{table}[!tb]
 \caption{Thermal dissipation relative to $\rho = 0$ across static load levels
 under single-joint excitation (E1).}
@@ -343,6 +346,7 @@ $20\Nm$ & 1.00 & 1.00 & 1.01 & \textbf{1.02}  & 1.06 \\
 \bottomrule
 \end{tabular}
 \end{table}
+\fi
 
 \ifshowLoadSweep  % off: loses the rho/(1-rho) linearity and its 0.45 percent residual
 \begin{figure*}[!tb]
@@ -389,12 +393,9 @@ Command-side statistics were evaluated across ablated Go1 policy checkpoints
 Table~\ref{tab:ablation} reports the five most representative.
 
 \begin{table}[!tb]
-\caption{Command-side thermal statistics across reward ablations (E2), five seeds.
-$\tau_{\mathrm{step}}$ is mean $\pm$ s.d.\ across seeds; the last column is the
-change against that seed's own baseline, averaged. $^{\textrm{ns}}$ marks an
-interval that straddles zero. The spectral centroid and
-$\rho_{>5\,\mathrm{Hz}}$ are omitted here for column width and are reported in
-the extended version.}
+\caption{Command-side thermal statistics across reward ablations (E2), five
+seeds, mean $\pm$ s.d. The last column is the paired change against that seed's
+own baseline; $^{\textrm{ns}}$ marks an interval straddling zero.}
 \label{tab:ablation}
 \centering
 \footnotesize
@@ -429,9 +430,9 @@ the rule below the axes marks instead.}
 
 Ablating the standard \texttt{action\_rate} penalty produces no effect we can
 measure: the paired change is ${+}5\% \pm 6$, an interval containing zero, and in
-one seed of five the ablated policy is \emph{smoother} than its own baseline. An
-earlier single-seed draft reported ${+}8\%$; that was one draw from this
-distribution. Conversely, eliminating joint torque and energy regularizations
+one seed of five the ablated policy is \emph{smoother} than its own baseline. A
+single seed is not enough to see this: individual draws range from $-4.5\%$ to
+${+}11.6\%$. Conversely, eliminating joint torque and energy regularizations
 inflates step transients by ${+}74\% \pm 23$, positive in every seed. The spread
 is not an artefact of unstable training: final evaluation return is tight across
 seeds for every variant (baseline $25.8 \pm 0.6$, task-only $26.3 \pm 0.3$), so
@@ -899,7 +900,7 @@ Electron.}, vol. 36, no. 7, pp. 7480--7488, 2021.
 \bibitem{thermalpred}
 T. K. La and E. G. Kaigom, ``Deep learning for model-free prediction of thermal
 states of robot joint motors,'' \emph{IFAC-PapersOnLine}, vol. 59, no. 18,
-pp. 211--216, 2025, arXiv:2509.12739.
+pp. 211--216, 2025.
 
 \bibitem{urs}
 K. Urs, C. E. Adu, E. J. Rouse, and T. Y. Moore, ``Design and characterization of
@@ -922,7 +923,7 @@ Robot Learn. (CoRL)}, 2021, pp. 91--100.
 \bibitem{isaacgym}
 V. Makoviychuk et al., ``Isaac Gym: High performance GPU-based physics simulation
 for robot learning,'' in \emph{Proc. Adv. Neural Inf. Process. Syst. (NeurIPS)
-Datasets Benchmarks Track}, 2021, arXiv:2108.10470.
+Datasets Benchmarks Track}, 2021.
 
 \bibitem{wtw}
 G. B. Margolis and P. Agrawal, ``Walk these ways: Tuning robot control for
@@ -1003,7 +1004,7 @@ voltage-constrained actuation,'' in \emph{Proc. Robot., Sci. Syst. (RSS)}, 2026.
 \bibitem{lipo}
 D. Son and S. Park, ``LiPo: A lightweight post-optimization framework for
 smoothing action chunks generated by learned policies,'' \emph{Int. J. Control
-Autom. Syst.}, vol. 23, no. 11, pp. 3284--3292, 2025, arXiv:2506.05165.
+Autom. Syst.}, vol. 23, no. 11, pp. 3284--3292, 2025.
 
 \bibitem{bspline}
 X. Han et al., ``B-spline policy: Accelerating manipulation policies via B-spline
@@ -1016,7 +1017,7 @@ on cost-constrained quadrupedal hardware,'' arXiv:2607.26434, 2026.
 \bibitem{act}
 T. Z. Zhao, V. Kumar, S. Levine, and C. Finn, ``Learning fine-grained bimanual
 manipulation with low-cost hardware,'' in \emph{Proc. Robot., Sci. Syst. (RSS)},
-2023, arXiv:2304.13705.
+2023.
 
 \bibitem{diffusion}
 C. Chi et al., ``Diffusion policy: Visuomotor policy learning via action
@@ -1097,8 +1098,7 @@ P. Liotet, ``Delays in reinforcement learning,'' arXiv:2309.11096, 2023.
 \bibitem{tnn}
 W. Kirchg\"{a}ssner, O. Wallscheid, and J. B\"{o}cker, ``Thermal neural networks:
 Lumped-parameter thermal modeling with state-space machine learning,''
-\emph{Eng. Appl. Artif. Intell.}, vol. 117, art. no. 105537, 2023,
-arXiv:2103.16323.
+\emph{Eng. Appl. Artif. Intell.}, vol. 117, art. no. 105537, 2023.
 
 \end{thebibliography}
 

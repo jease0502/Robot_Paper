@@ -9,7 +9,7 @@ python build_icra.py      # stage figures from ../figsrc/out and ../pic, then bu
 latexmk -pdf main.tex     # build only, if figures are already staged
 ```
 
-Current build: **8 pages**, US Letter, clean compile. Zero errors, zero overfull
+Current build: **8 pages**, reward ablations now five-seed, US Letter, clean compile. Zero errors, zero overfull
 boxes, zero undefined references. **PaperPlaza PDF compliance: passed** under the
 ICRA 2027 profile, 2026-09-10.
 
@@ -76,6 +76,7 @@ All eight are still in the source; each comes back by flipping its switch.
 
 | Switch | Item | What is lost |
 |---|---|---|
+| `showLoadTable` | E1 load-sweep grid | Sec. V-A states both endpoints in prose |
 | `showJointTable` | Per-joint-family band split | The 14–17% / 33–45% figures **the abstract quotes** |
 | `showLoadSweep` | E1 sweep figure | The ρ/(1−ρ) linearity and its 0.45% residual |
 | `showNyquistTable` | Above-Nyquist term | Evidence that halving the staircase term *raises* total heat |
