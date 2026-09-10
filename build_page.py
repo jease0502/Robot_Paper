@@ -73,11 +73,13 @@ def _svg(name: str) -> str:
     return root + rest
 
 
-def _png(name: str, caption: str) -> str:
+def _raster(name: str, caption: str) -> str:
+    """Embed a pic/ raster as a data: URI -- the Artifact CSP blocks external images."""
+    mime = {"png": "image/png", "gif": "image/gif"}[name.rsplit(".", 1)[-1].lower()]
     data = (ROOT / "pic" / name).read_bytes()
     b64 = base64.b64encode(data).decode("ascii")
     alt = re.sub(r"<[^>]+>", "", caption)[:180]
-    return f'<img alt="{alt}" src="data:image/png;base64,{b64}">'
+    return f'<img alt="{alt}" src="data:{mime};base64,{b64}">'
 
 
 # Placeholder -> (kind, filename, caption). Figure numbers are assigned below in
@@ -90,6 +92,16 @@ FIGS = {
         "addition is the dashed block. Two details carry the paper: the torque tap feeding the "
         "four-band decomposition, and the dashed feedback path. The policy is itself a feedback "
         "controller, so latency spent inside that loop is subtracted from its stability margin.",
+    ),
+    "FIG_FILTERS": (
+        "svg",
+        "fig5-three-filters.svg",
+        "Three ways to smooth a command, and what each one costs. The kernel is the same shape "
+        "throughout; only where it sits in time changes. The causal filter's centre of mass sits "
+        "behind now, and that gap <em>is</em> the phase lag. Delaying two steps recovers symmetry but "
+        "spends 40 ms of latency out of the policy's stability margin. The predictive filter keeps the "
+        "kernel centred on now and estimates the half of it that has not happened yet, which is why "
+        "its recovery is bounded by predictability rather than by lag.",
     ),
     "FIG_E1": (
         "png",
@@ -109,12 +121,16 @@ FIGS = {
     ),
     "FIG_SPEC": (
         "png",
-        "command-spectrum.png",
+        "command-spectrum-annotated.png",
         "Command spectra across reward ablations. Left: command power spectra; the unregularized "
-        "policy is flat across the whole band. Right: the joint's closed-loop response. The shaded "
-        "region is the 15.3 Hz actuator bandwidth of Section 3.2, <em>not</em> the 5&ndash;25 Hz band "
-        "the decomposition uses; the two are distinguished in the text and this panel predates that "
-        "distinction.",
+        "policy is flat across the whole band, that is, white. Right: the joint's closed-loop "
+        "response. The grey shading in both panels is the 15.3 Hz actuator bandwidth that \\(\\rho\\) "
+        "is defined against in Section 3.2. It is <em>not</em> the 5&ndash;25 Hz filter-reachable band "
+        "of Section 5.4, which the rule below the axes marks instead; the two are different cuts and "
+        "are easy to conflate. The ruler was added by <code>figsrc/annotate_command_spectrum.py</code>, "
+        "which measures the axis mapping from the rendered spines and leaves every data pixel "
+        "untouched. Regenerating the panel from the source rollouts is "
+        "<span class=\"pending\">pending</span>.",
     ),
     "FIG_E3": (
         "png",
@@ -122,6 +138,14 @@ FIGS = {
         "Open-loop filter sweep (E2). Up and to the left is better. The zero-phase curve dominates the "
         "causal one at every cutoff, and the gap between them is phase lag alone. At 10 N&middot;m of "
         "steady load the whole picture collapses to a vertical line: there is nothing to win.",
+    ),
+    "FIG_ANIM": (
+        "gif",
+        "anim-phase-lag.gif",
+        "Phase lag, animated: one joint's command replayed with each scheme in turn. The causal "
+        "low-pass trails the command, the delayed zero-phase filter is smooth but late, and the "
+        "predictive filter stays on it. This is the same comparison as Fig. 2 with time running. "
+        "Web only &mdash; the submission figure set contains no animations.",
     ),
     "FIG3": (
         "svg",
@@ -191,7 +215,12 @@ def main() -> int:
             print(f"error: {{{{{key}}}}} in template has no definition", file=sys.stderr)
             return 1
         kind, name, caption = FIGS[key]
-        body = _svg(name) if kind == "svg" else _png(name, caption)
+        src = ROOT / ("fig" if kind == "svg" else "pic") / name
+        if not src.exists():
+            print(f"error: {{{{{key}}}}} needs {src.relative_to(ROOT)}, which is missing",
+                  file=sys.stderr)
+            return 1
+        body = _svg(name) if kind == "svg" else _raster(name, caption)
         html = html.replace("{{" + key + "}}", _figure(body, number, caption), 1)
 
     leftover = re.findall(r"\{\{[A-Z_0-9]+\}\}", html)

@@ -294,9 +294,13 @@ governs command-side thermal load.</li>
 <p class="noind">Commercial quadruped and humanoid architectures run proportional-derivative loops on
 the motor drive rather than inside the policy process. The policy emits position targets at
 \(f_{\text{pol}}\); these cross a communication bus to motor-side PD loops running at higher rate. On
-Unitree systems the policy executes at 50 Hz and commands are written at 500 Hz; DeepRobotics Lite3
-deployments run policies near 83 Hz over a 1 kHz state loop. Actuator-level control reaches 6 kHz on
-the Unitree GO-M8010-6 and 1 kHz on the DeepRobotics J60.<a class="cite" href="#ref6">[6]</a></p>
+Unitree systems the policy executes at 50 Hz and low-level commands are written at
+500 Hz.<a class="cite" href="#ref62">[62]</a> DeepRobotics Lite3 deployments run a 1 kHz state
+loop.<a class="cite" href="#ref63">[63]</a> Vendor datasheets give a communication control frequency
+of 6 kHz for the Unitree GO-M8010-6<a class="cite" href="#ref6">[6]</a> and 1 kHz for the DeepRobotics
+J60.<a class="cite" href="#ref61">[61]</a> The policy rate used in Lite3 deployments is
+<span class="pending">pending</span>: an earlier draft put it near 83 Hz, but no public source states
+that figure and the only published rate we could find is roughly 50 Hz.</p>
 
 <p>A zero-order hold (ZOH) sits between policy and low-level loop. At 50 Hz into 500 Hz each command is
 held for ten ticks and then steps discontinuously, producing an instantaneous proportional transient of
@@ -403,6 +407,8 @@ window can be applied without waiting for future samples and therefore without l
 <p class="noind"><strong>Load gate.</strong> Joints whose mean absolute torque \(|\bar{\tau}|\) falls
 below the 3.2 N&middot;m crossover are filtered; the rest pass through unmodified.</p>
 
+{{FIG_FILTERS}}
+
 <h2><span class="secno">5.</span>Results</h2>
 
 <h3><span class="secno">5.1</span>Load-dependent thermal crossover</h3>
@@ -501,7 +507,9 @@ within 0.0004 rad. The causal version of the identical filter preserves only 74.
 motion, and the entire difference is phase lag: motion penalties of 25.0, 24.8 and 22.9 percentage
 points at 0, 2 and 10 N&middot;m of static load.</p>
 
-<p>Out-of-sample accuracy of the open-loop command predictor reaches \(R^2 = 0.679\) on the
+{{FIG_ANIM}}
+
+<p class="noind">Out-of-sample accuracy of the open-loop command predictor reaches \(R^2 = 0.679\) on the
 full-reward policy, 0.385 without effort terms and 0.059 with no regularization at all. The policies
 whose commands most need filtering are the ones whose commands are least predictable, which bounds
 what any causal scheme can reconstruct. A separate predictor fitted for the closed-loop experiments
@@ -762,7 +770,8 @@ safely recover actuator thermal margin on a frozen checkpoint.</p>
 <p class="tnote noind">All 60 entries were verified to exist by search on 10 September 2026. Entries
 whose author list the search did not expose carry <span class="pending">pending</span> rather than a
 reconstructed one. Entries [1]&ndash;[21] are cited in the text above; [22]&ndash;[60] are the
-extended bibliography and their placement in the text is <span class="pending">pending</span>.</p>
+extended bibliography and their placement in the text is <span class="pending">pending</span>.
+Entries [61]&ndash;[63] were added to retire the internal repository document that [6] used to be.</p>
 
 <ol class="refs">
 {{REFS}}
@@ -866,6 +875,8 @@ corroborated elsewhere in v1 and the prose value is not. Line references are to
       <tr><td>G1 humanoid band decomposition</td><td>Section 1, Section 8, Appendix A.3</td><td>Running E5 on a G1. The cross-morphology claim rests on it.</td></tr>
       <tr><td>Hardware confirmation of the 3.2 N&middot;m crossover</td><td>Section 5.1, Section 8, Appendix A.4</td><td>One motor, a torque load and a current probe.</td></tr>
       <tr><td>Text placement for references [22]&ndash;[60]</td><td>References</td><td>39 of the 60 verified entries are not yet cited anywhere in the prose, which only reaches [21]. Either cite them or cut them before submission.</td></tr>
+      <tr><td>DeepRobotics Lite3 policy rate</td><td>Section 2</td><td>An earlier draft claimed roughly 83 Hz. No public source states it, and the only published figure found is about 50 Hz, which contradicts it. Withdrawn pending first-hand deployment data.</td></tr>
+      <tr><td>Regeneration of the command-spectrum panel from source rollouts</td><td>Section 5.2, Fig. 5</td><td>The rollouts are not in this repository. <code>figsrc/annotate_command_spectrum.py</code> adds a band ruler distinguishing the 15.3 Hz shading from the 5&ndash;25 Hz claim without touching a data pixel, but the panel itself has not been re-plotted.</td></tr>
     </tbody>
   </table>
   </div>

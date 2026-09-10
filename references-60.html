@@ -3,7 +3,7 @@
     <li id="ref3">Y. Wan, W. Lin, L. Qian, Y. Zou, W. Wu, S. Liao, C. Zhao, and X. Luo, &ldquo;Learning to balance motor thermal safety and quadrupedal locomotion performance with residual policy,&rdquo; arXiv:2605.27046, 2026.</li>
     <li id="ref4">T. Matsuzawa, K. Irie, T. Yoshida, T. Suzuki, Y. Hara, and M. Tomono, &ldquo;Long-distance real-world navigation of the legged-wheeled robot Go2-W using deep reinforcement learning,&rdquo; arXiv:2606.21387, 2026.</li>
     <li id="ref5">S. Mysore, B. Mabsout, R. Mancuso, and K. Saenko, &ldquo;Regularizing action policies for smooth control with reinforcement learning,&rdquo; <em>Proc. ICRA</em>, 2021. arXiv:2012.06644.</li>
-    <li id="ref6">Vendor control-stack reference, this repository, <code>docs/legged-rl-control-stack-reference.md</code>, 2024.</li>
+    <li id="ref6">Unitree Robotics, &ldquo;GO-M8010-6 motor data user manual,&rdquo; V1.0, 2023. [Online]. Available: https://techshare.co.jp/faq/wp-content/uploads/2023/12/GO-M8010-6_Motor_Data_User_Manual_V1.0.pdf &mdash; the datasheet field is <em>communication control frequency</em>, 6000 Hz; it is not labelled as a current-loop rate.</li>
     <li id="ref7">maxon motor ag, &ldquo;EC max 30 Ø30 mm, brushless, 60 W,&rdquo; datasheet, 2024.</li>
     <li id="ref8">K. Urs, C. E. Adu, E. J. Rouse, and T. Y. Moore, &ldquo;Design and characterization of 3D printed, open-source actuators for legged locomotion,&rdquo; <em>Proc. IROS</em>, 2022. arXiv:2202.12395.</li>
     <li id="ref9">S. J. Jorgensen, J. Holley, F. Mathis, J. S. Mehling, and L. Sentis, &ldquo;Thermal recovery of multi-limbed robots with electric actuators,&rdquo; <em>IEEE RA-L</em>, vol. 4, no. 2, pp. 1077–1084, 2019.</li>
@@ -58,3 +58,6 @@
     <li id="ref58"><span class="pending">authors pending</span>, &ldquo;Guiding energy-efficient locomotion through impact mitigation rewards,&rdquo; arXiv:2510.09543, 2025.</li>
     <li id="ref59"><span class="pending">authors pending</span>, &ldquo;Energy-efficient quadruped locomotion with compliant feet,&rdquo; arXiv:2605.14411, 2026.</li>
     <li id="ref60"><span class="pending">authors pending</span>, &ldquo;Energy efficient control of electric motors,&rdquo; arXiv:2109.11113, 2021.</li>
+    <li id="ref61">DEEP Robotics, &ldquo;J60 joint,&rdquo; product page, 2024. [Online]. Available: https://www.deeprobotics.cn/en/wap/j60.html &mdash; states a communication control frequency of 1 kHz.</li>
+    <li id="ref62">Unitree Robotics, &ldquo;unitree_legged_sdk,&rdquo; <code>example_py/example_position.py</code>, GitHub, 2024. [Online]. Available: https://github.com/unitreerobotics/unitree_legged_sdk/blob/master/example_py/example_position.py &mdash; the example control loop uses <code>dt = 0.002</code>, i.e. 500 Hz. Code, not documentation.</li>
+    <li id="ref63">DEEP Robotics, &ldquo;Physical AI 101: reinforcement learning with the Lite3,&rdquo; company blog, 2025. [Online]. Available: https://www.deeprobotics.us/news/physical-ai-101-the-ultimate-guide-to-mastering-reinforcement-learning-with-the-deep-robotics-lite3/ &mdash; states a 1 kHz real-time control loop. Does not state a policy rate.</li>

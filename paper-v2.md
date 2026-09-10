@@ -47,7 +47,11 @@ In this work, we locate the crossover between these two regimes, quantify the th
 
 ## 2. Actuation Pipeline and Problem Formulation
 
-Commercial quadruped and humanoid architectures execute proportional-derivative (PD) loops directly on the motor drive rather than within the policy process. The policy outputs position targets at $f_{\text{pol}}$, which are transmitted across a communication bus to motor-side PD loops running at higher frequencies. On Unitree systems, the policy executes at 50 Hz and commands are written at 500 Hz; DeepRobotics Lite3 deployments run policies at approximately 83 Hz over a 1 kHz state loop. Actuator-level control frequencies reach 6 kHz for the Unitree GO-M8010-6 and 1 kHz for the DeepRobotics J60.[6]
+Commercial quadruped and humanoid architectures execute proportional-derivative (PD) loops directly on the motor drive rather than within the policy process. The policy outputs position targets at $f_{\text{pol}}$, which are transmitted across a communication bus to motor-side PD loops running at higher frequencies. On Unitree systems, the policy executes at 50 Hz and low-level commands are written at 500 Hz.[62]
+DeepRobotics Lite3 deployments run a 1 kHz state loop.[63] Vendor datasheets give a communication
+control frequency of 6 kHz for the Unitree GO-M8010-6[6] and 1 kHz for the DeepRobotics J60.[61]
+The policy rate used in Lite3 deployments is `pending`: an earlier draft put it near 83 Hz, but no
+public source states that figure and the only published rate we could find is roughly 50 Hz.
 
 A zero-order hold (ZOH) interfaces the policy to the low-level loop. At 50 Hz into 500 Hz, each command is held for 10 ticks before stepping discontinuously, producing an instantaneous proportional transient of $k_p \Delta q$ prior to rotor displacement.
 
@@ -323,7 +327,20 @@ Actuator overheating in learned legged locomotion decomposes into steady posture
 
 [5] S. Mysore, B. Mabsout, R. Mancuso, and K. Saenko, "Regularizing action policies for smooth control with reinforcement learning," in *Proc. ICRA*, 2021.
 
-[6] Vendor control-stack reference, `docs/legged-rl-control-stack-reference.md`, 2024.
+[6] Unitree Robotics, "GO-M8010-6 motor data user manual," V1.0, 2023. Available:
+https://techshare.co.jp/faq/wp-content/uploads/2023/12/GO-M8010-6_Motor_Data_User_Manual_V1.0.pdf
+— the datasheet field is *communication control frequency*, 6000 Hz; it is not labelled a current-loop rate.
+
+[61] DEEP Robotics, "J60 joint," product page, 2024. Available: https://www.deeprobotics.cn/en/wap/j60.html
+— states a communication control frequency of 1 kHz.
+
+[62] Unitree Robotics, "unitree_legged_sdk," `example_py/example_position.py`, GitHub, 2024. Available:
+https://github.com/unitreerobotics/unitree_legged_sdk/blob/master/example_py/example_position.py
+— the example control loop uses `dt = 0.002`, i.e. 500 Hz. Code, not documentation.
+
+[63] DEEP Robotics, "Physical AI 101: reinforcement learning with the Lite3," company blog, 2025. Available:
+https://www.deeprobotics.us/news/physical-ai-101-the-ultimate-guide-to-mastering-reinforcement-learning-with-the-deep-robotics-lite3/
+— states a 1 kHz real-time control loop. Does not state a policy rate.
 
 [7] maxon motor ag, "EC max 30 Ø30 mm, brushless, 60 W," datasheet, 2024.
 
@@ -403,10 +420,14 @@ estimated.
 | G1 humanoid band decomposition | §1, §8, Appendix A.3 | Running E5 on a G1. The cross-morphology claim rests on it. |
 | Hardware confirmation of the 3.2 N·m crossover | §5.1, §8, Appendix A.4 | One motor, a torque load and a current probe. |
 | Text placement for references [22]–[60] | References | 39 of the 60 verified entries are not yet cited anywhere in the prose, which only reaches [21]. Either cite them or cut them before submission. |
+| DeepRobotics Lite3 policy rate | §2 | An earlier draft claimed ~83 Hz. No public source states it; the only published figure found is ~50 Hz, which contradicts it. Withdrawn pending first-hand deployment data. |
+| Regeneration of `command-spectrum.png` from source rollouts | §5.2 | The source rollouts are not in this repository. `figsrc/annotate_command_spectrum.py` adds a band ruler that distinguishes the 15.3 Hz shading from the 5–25 Hz claim without touching a data pixel, but the panel itself has not been re-plotted. |
 
-**Still unresolved, and not a number.** Figure `pic/command-spectrum.png` shades the 15.3 Hz actuator
-bandwidth, not the 5–25 Hz band the decomposition uses. The distinction is now stated in §3 and in the
-figure caption, but the panel itself should be regenerated.
+**Reference [6] retired.** It was `docs/legged-rl-control-stack-reference.md`, an internal repository
+file, which cannot be a citation in a submitted paper. It is replaced by three public vendor sources,
+[6], [61] and [62], plus [63] for the Lite3 loop rate. One caveat survives: the 6 kHz figure is the
+datasheet's *communication control frequency*, which is not the same thing as a current-loop rate, and
+the text now says so.
 
 ---
 
