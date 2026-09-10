@@ -9,6 +9,7 @@ data/
   scripts/    the experiment code, one file per experiment
   results/    the numeric output behind every table and figure
   rollouts/   the seven reward-ablation rollouts, source for Table 2 and Fig. 5
+  protocol-thermal-bench.md   the hardware protocol for Appendix A.4, not yet run
 ```
 
 Everything is simulation. There are no hardware measurements in this repository,
