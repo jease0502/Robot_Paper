@@ -103,7 +103,7 @@ Tables 5, 6 and 8 were switched off while the prose still cited them, so they
 rendered as "Table ??" — the citing text is now inside the same switch as the
 float. And five tabulars ran past the column edge, by up to 114 pt, which had
 sheared the "Deployable" column off Table III; `\small` and a smaller
-`	abcolsep` bring them inside the column.
+`\tabcolsep` bring them inside the column.
 
 ---
 
