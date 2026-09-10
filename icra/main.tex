@@ -112,7 +112,7 @@ effort and energy penalties dictate the accessible thermal budget (89\% increase
 
 \section{Introduction}
 
-Legged locomotion policies trained via deep reinforcement learning (RL) routinely
+Legged locomotion policies trained via deep reinforcement learning (RL)~\cite{lee,miki} routinely
 push actuator thermal limits in deployment, frequently triggering thermal
 shutdowns in operating regimes where vendor-supplied classical controllers operate
 stably. On a Unitree G1 humanoid running whole-body RL, ankle-roll actuators reach
@@ -147,7 +147,8 @@ across the kinematic chain.
 This insight highlights a fundamental engineering dilemma. In standard practice,
 researchers attempt to suppress command jitter by laboriously retuning reward
 formulations and retraining policies from scratch---a computationally burdensome
-and often fragile process. Conversely, deploying post-hoc command smoothing on
+and often fragile process, and one that is unavailable whenever the deployed
+checkpoint is fixed, as on resource-constrained platforms~\cite{resourceconstrained}. Conversely, deploying post-hoc command smoothing on
 frozen checkpoints is traditionally avoided: naive low-pass filtering inevitably
 injects phase lag into the feedback path. Because the learned policy operates as a
 high-gain feedback controller, this added latency directly erodes closed-loop
@@ -191,7 +192,12 @@ penalties dictate the accessible budget (89\% increase).
 
 Commercial quadruped and humanoid architectures execute proportional-derivative
 (PD) tracking loops on distributed motor drives rather than within the policy
-loop. As illustrated in Fig.~\ref{fig:arch}, the policy emits joint position
+loop. These drives are quasi-direct-drive: low gear ratios preserve
+backdrivability and torque transparency, but leave winding loss directly exposed
+to commanded torque~\cite{wensing,minicheetah}, whereas series-elastic designs
+place compliance between motor and joint instead~\cite{anymal}. Because neither
+is an ideal torque source, sim-to-real pipelines commonly learn the actuator
+model from bench data rather than idealizing the joint~\cite{hwangbo}. As illustrated in Fig.~\ref{fig:arch}, the policy emits joint position
 targets $q^*$ at frequency $f_{\mathrm{pol}}$. These setpoints cross a
 communication bus to motor-side PD loops running at a substantially higher
 frequency. In Unitree systems, the policy executes at $f_{\mathrm{pol}} = 50$\,Hz
@@ -217,8 +223,9 @@ low-level drive. Operating at 50\,Hz into 500\,Hz, each setpoint is held constan
 across ten sub-ticks before stepping discontinuously, producing an instantaneous
 proportional transient of $k_p \Delta q$ prior to mechanical rotor acceleration.
 
-In standardized training environments such as \texttt{unitree\_rl\_mjlab}, PD
-gains are tuned for a target closed-loop natural frequency of $f_n = 10$\,Hz with
+In standardized training environments such as \texttt{unitree\_rl\_mjlab}~\cite{mjlab},
+which inherit the manager-based gain and action-scale conventions of Isaac
+Lab~\cite{orbit}, PD gains are tuned for a target closed-loop natural frequency of $f_n = 10$\,Hz with
 a damping ratio $\zeta = 2.0$, and action scaling is normalized to $0.25\,e/k_p$,
 where $e$ is the actuator effort limit. Consequently, an action reversal between
 successive policy steps commands a peak transient $\tau_{\mathrm{step}} =
@@ -279,16 +286,29 @@ Quadratic torque evaluation is physically validated by stator thermal dynamics: 
 calibrated brushless actuators, the winding thermal time constant is 3.12\,s
 against 777\,s for the motor housing---a disparity factor of 249~\cite{maxon}.
 Because driver thermistors exhibit significant thermal lag relative to winding
-junctions, current-based squared torque serves as the primary ground-truth
-metric~\cite{urs}.
+junctions, and because driver-reported temperature is itself the output of a
+model rather than a winding measurement~\cite{wallscheid,kirchgassner,thermalpred},
+current-based squared torque serves as the primary ground-truth
+metric~\cite{urs}. Minimizing $I^2R$ is likewise the drive-side statement of
+energy-efficient motor control~\cite{energymotor}.
+
+\subsection{Effect Size}
+
+Paired comparisons between schemes are reported with Cliff's $\delta$, a
+non-parametric ordinal effect size that makes no distributional
+assumption~\cite{cliff}.
 
 \section{Experimental Setup}
 
 Four experimental protocols are evaluated. The labels follow the source
-experiments; there is no E4, as the label was never assigned.
+experiments; there is no E4, as the label was never assigned. The checkpoints and
+the reward-term vocabulary the ablations manipulate follow the massively parallel
+GPU training practice of \texttt{legged\_gym}~\cite{rudin} on Isaac
+Gym~\cite{isaacgym} and the open sim-to-real stacks published for the
+Go1~\cite{wtw}.
 
 \textbf{E1 (single joint, synthetic signals).} A second-order joint model
-representative of the Unitree Go1 ($k_p = 35$, damping 0.5, rotor inertia
+representative of the Unitree Go1~\cite{playground} ($k_p = 35$, damping 0.5, rotor inertia
 0.005\,kg$\cdot$m$^2$, $f_n = 13.3$\,Hz, $\zeta = 0.60$, $-3$\,dB bandwidth
 15.3\,Hz) is excited by a 2\,Hz sinusoidal command injected with bandpass noise
 above bandwidth. Commands are sampled at 50\,Hz, held via ZOH to 500\,Hz, and
@@ -311,8 +331,9 @@ rollouts. Mean torque per policy step is recorded at 50\,Hz, with spectral cuts 
 5\,Hz and 25\,Hz, and intra-step variance supplying the $>25$\,Hz component.
 
 \textbf{Predictive compensator and load gate.} An order-8 linear autoregressive
-model, AR(8), is fitted via least squares on baseline rollouts and rolled forward
-two steps. This enables a symmetric Hann window to be applied without awaiting
+model, AR(8), is fitted by least squares on baseline rollouts in the standard
+linear-prediction sense~\cite{makhoul} and rolled forward
+two steps. This enables a symmetric Hann window~\cite{harris} to be applied without awaiting
 future samples, eliminating filter phase lag (Fig.~\ref{fig:filters}). Joints
 whose mean absolute torque $|\bar{\tau}|$ falls below the $3.2\Nm$ threshold are
 filtered, whereas heavily loaded joints pass through unmodified.
@@ -383,7 +404,9 @@ On the Unitree Go1, measured mean absolute joint torques $|\bar{\tau}|$ average
 1.24--1.48$\Nm$ for hip abduction, 2.00--2.59$\Nm$ for thighs, and
 5.88--6.88$\Nm$ for calves. Eight of the twelve joints operate below the $3.2\Nm$
 crossover, while the four knee actuators operate well above it
-(Fig.~\ref{fig:crossover}). Consequently, posture demands dominate knee
+(Fig.~\ref{fig:crossover}). Motor selection for quasi-direct-drive joints is
+argued on the same footing, by the torque operating point rather than by peak
+rating~\cite{motorselect}. Consequently, posture demands dominate knee
 dissipation, whereas jitter drives overheating in lightly loaded joints.
 
 \begin{figure}[!tb]
@@ -439,7 +462,9 @@ the rule below the axes marks instead.}
 Ablating the standard \texttt{action\_rate} penalty increases step transients by
 only 8\%. Conversely, eliminating joint torque and energy regularizations inflates
 step transients by 89\%. Direct effort minimization, rather than discrete action
-smoothing, serves as the primary regularizer of command-side thermal load.
+smoothing, serves as the primary regularizer of command-side thermal load. The
+same lever has been made adaptive to drive gait transition and locomotion
+efficiency~\cite{energyreg}.
 
 \subsection{Open-Loop Filtering and the Cost of Phase Lag}
 
@@ -478,8 +503,9 @@ line: there is nothing to win.}
 \end{figure*}
 \fi
 
-Zero-phase filtering achieves a 46\% thermal reduction while preserving 99.5\% of
-intended trajectory motion. However, a causal implementation of the identical
+Zero-phase filtering---non-causal, because the record is run through the filter
+forwards and then backwards~\cite{gustafsson}---achieves a 46\% thermal reduction
+while preserving 99.5\% of intended trajectory motion. However, a causal implementation of the identical
 filter preserves only 74.5\% of intended motion due entirely to phase lag.
 Out-of-sample \emph{open-loop} command prediction accuracy reaches $R^2 = 0.679$
 on the full-reward policy, declining to 0.385 without effort terms, and collapsing
@@ -554,7 +580,10 @@ about half of whatever is there on either policy.}
 \subsection{Closed-Loop Filtering: Latency Induces Instability}
 
 When deployed inside the active feedback control loop, open-loop filtering gains
-evaporate due to phase lag (Table~\ref{tab:closedloop}).
+evaporate due to phase lag (Table~\ref{tab:closedloop}). The policy is itself a
+feedback controller, trained alongside the state estimator that closes the same
+loop~\cite{concurrent}, so latency inserted ahead of it is taken out of its own
+phase margin.
 
 \begin{table}[!tb]
 \caption{Full-body closed-loop locomotion performance ($n = 30$ per scheme, E3).
@@ -655,7 +684,11 @@ smoothing filter at the bottom of the speed range.}
 The delayed zero-phase filter succeeds at 0.5\,m/s, with a 12\% heat reduction and
 zero falls, but destabilizes at 1.0\,m/s, with a 20\% fall rate and a 25.8\% heat
 increase\ifshowVelocityTable (Table~\ref{tab:velocity})\fi. Similarly, the 5\,Hz Butterworth induces
-falls in 70\% of episodes at 1.0\,m/s. Gating the predictive filter by joint load
+falls in 70\% of episodes at 1.0\,m/s. Delay is not unmanageable in principle---%
+model-based agents absorb it by augmenting the state with the pending action
+queue~\cite{delayaware}---but that route requires retraining, whereas real-time
+chunking hides inference latency by inpainting the next chunk rather than
+delaying execution~\cite{rtc}. Gating the predictive filter by joint load
 costs 2.5 percentage points of thermal relief but maintains tracking fidelity at
 0.995 of baseline at 1.0\,m/s without falls.
 
@@ -719,7 +752,9 @@ speed range, which is therefore where a candidate filter must be evaluated.
 \sqrt{\mathrm{Var}(\tau)}$, preserving tracking on stance joints while removing
 jitter from unloaded ones. \emph{Prefer effort regularization to
 \texttt{action\_rate}}: torque and energy penalties govern 89\% of the transient
-against 8\%.
+against 8\%. Impact-mitigation rewards~\cite{impactmit} and compliant
+feet~\cite{compliantfeet} reach the same budget from the reward and mechanical
+sides respectively.
 
 \section{Related Work}
 
@@ -734,13 +769,25 @@ and cannot do.
 high-level commands and motor drives include actuator reality shaping,
 high-frequency torque interpolation, voltage-realizable acceleration bounds,
 action-chunk post-optimization, B-spline policy representations, and forward delay
-compensation~\cite{yamamori,kourdis,vra,lipo,bspline,weddington}. Smoothness is
+compensation~\cite{yamamori,kourdis,vra,lipo,bspline,weddington}. Manipulation
+meets the same interface from the other side: action chunking runs a slow policy
+above a fast controller~\cite{act} and receding-horizon diffusion execution makes
+the chunk boundary the analogue of the ZOH step~\cite{diffusion}. Where the
+actuator gap is treated as a modelling problem instead, the standard answers are
+domain randomization, online system identification, and folding actuator limits
+into training~\cite{domainrand,uposi,actconstrained}; all three require
+retraining. Smoothness is
 otherwise pursued during training, through CAPS, Lipschitz-constrained
 architectures and spectral
-normalization~\cite{caps,lipschitz,specnorm,benchmark}, while the control-rate
+normalization~\cite{caps,lipschitz,specnorm,benchmark}, through locally Lipschitz
+continuity constraints, redesigned smoothing regularizers, stabilized
+$Q$-gradient fields, and task-specified compliance
+bounds~\cite{l2c2,regsmooth,qgrad,compliancebounds}, while the control-rate
 literature reports robust locomotion at 8\,Hz, Q-learning degeneration as the time
 step shrinks, and policies that choose their own action
-durations~\cite{gangapurwala,tallec,tarc}. None of this work measures physical
+durations~\cite{gangapurwala,tallec,tarc}, and the delayed-MDP literature maps
+where such latency can and cannot be absorbed~\cite{delaysurvey}. None of this
+work measures physical
 copper loss or separates steady holding torque from command ripple, which is the
 gap addressed here.
 
@@ -756,7 +803,9 @@ reliable framework to recover actuator thermal margins on frozen checkpoints
 without retraining.
 
 This study is simulation only: squared torque proxies winding copper loss under
-constant $K_t$, omitting iron losses, inverter switching and thermal diffusion;
+constant $K_t$, omitting iron losses, inverter switching and thermal diffusion,
+so a lumped-parameter or learned thermal network would be required to turn the
+proxy into a winding temperature~\cite{tnn};
 single-joint sweeps omit contact dynamics; and every result is measured on flat
 terrain on one quadruped. The 5\,Hz gait split is hand-chosen and has not been
 swept, and the reward ablations are single-seed over 8\,s with no confidence
@@ -765,7 +814,18 @@ confirming the $3.2\Nm$ crossover on a dynamometer, are the essential next steps
 
 \balance
 \begin{thebibliography}{99}
-\itemsep 0pt \parskip 0pt \parsep 0pt
+\footnotesize
+\itemsep 0pt \parskip 0pt \parsep 0pt \labelsep 3pt
+
+\bibitem{lee}
+J. Lee, J. Hwangbo, L. Wellhausen, V. Koltun, and M. Hutter, ``Learning
+quadrupedal locomotion over challenging terrain,'' \emph{Science Robotics},
+vol. 5, no. 47, eabc5986, 2020.
+
+\bibitem{miki}
+T. Miki, J. Lee, J. Hwangbo, L. Wellhausen, V. Koltun, and M. Hutter, ``Learning
+robust perceptive locomotion for quadrupedal robots in the wild,'' \emph{Science
+Robotics}, vol. 7, no. 62, eabk2822, 2022.
 
 \bibitem{g1issue}
 NVIDIA Research, ``Ankle roll motors overheating on G1,''
@@ -776,9 +836,32 @@ T. Matsuzawa, K. Irie, T. Yoshida, T. Suzuki, Y. Hara, and M. Tomono,
 ``Long-distance real-world navigation of the legged-wheeled robot Go2-W using
 deep reinforcement learning,'' arXiv:2606.21387, 2026.
 
+\bibitem{resourceconstrained}
+\pending, ``Robust reinforcement learning-based locomotion for
+resource-constrained quadrupeds with exteroceptive sensing,'' arXiv:2505.12537,
+2025.
+
+\bibitem{wensing}
+P. M. Wensing, A. Wang, S. Seok, D. Otten, J. Lang, and S. Kim, ``Proprioceptive
+actuator design in the MIT Cheetah: Impact mitigation and high-bandwidth physical
+interaction for dynamic legged robots,'' \emph{IEEE Trans. Robot.}, vol. 33,
+no. 3, pp. 509--522, 2017.
+
+\bibitem{minicheetah}
+B. Katz, J. Di Carlo, and S. Kim, ``Mini Cheetah: A platform for pushing the
+limits of dynamic quadruped control,'' in \emph{Proc. ICRA}, 2019.
+
+\bibitem{anymal}
+M. Hutter et al., ``ANYmal --- a highly mobile and dynamic quadrupedal robot,''
+in \emph{Proc. IROS}, 2016.
+
+\bibitem{hwangbo}
+J. Hwangbo et al., ``Learning agile and dynamic motor skills for legged robots,''
+\emph{Science Robotics}, vol. 4, no. 26, eaau5872, 2019.
+
 \bibitem{unitreesdk}
 Unitree Robotics, ``unitree\_legged\_sdk,''
-\texttt{example\_py/example\_position.py}, GitHub, 2024.
+\texttt{example\_py/\allowbreak example\_position.py}, GitHub, 2024.
 
 \bibitem{lite3blog}
 DEEP Robotics, ``Physical AI 101: reinforcement learning with the Lite3,''
@@ -790,13 +873,101 @@ Unitree Robotics, ``GO-M8010-6 motor data user manual,'' V1.0, 2023.
 \bibitem{j60}
 DEEP Robotics, ``J60 joint,'' product page, 2024.
 
+\bibitem{mjlab}
+K. Zakka, Q. Liao, B. Yi, L. Le Lay, K. Sreenath, and P. Abbeel, ``mjlab: A
+lightweight framework for GPU-accelerated robot learning,'' arXiv:2601.22074,
+2026.
+
+\bibitem{orbit}
+M. Mittal et al., ``Orbit: A unified simulation framework for interactive robot
+learning environments,'' \emph{IEEE Robot. Autom. Lett.}, 2023.
+
 \bibitem{maxon}
 maxon motor ag, ``EC max 30 \O30\,mm, brushless, 60\,W,'' datasheet, 2024.
+
+\bibitem{wallscheid}
+O. Wallscheid, ``Thermal monitoring of electric motors: State-of-the-art review
+and future challenges,'' \emph{IEEE Open J. Ind. Appl.}, 2021.
+
+\bibitem{kirchgassner}
+W. Kirchg\"{a}ssner, O. Wallscheid, and J. B\"{o}cker, ``Estimating electric motor
+tem\-per\-a\-tures with deep resid\-ual ma\-chine learn\-ing,'' \emph{IEEE Trans. Power
+Electron.}, vol. 36, no. 7, pp. 7480--7488, 2021.
+
+\bibitem{thermalpred}
+\pending, ``Deep learning for model-free prediction of thermal states of robot
+joint motors,'' arXiv:2509.12739, 2025.
 
 \bibitem{urs}
 K. Urs, C. E. Adu, E. J. Rouse, and T. Y. Moore, ``Design and characterization of
 3D printed, open-source actuators for legged locomotion,'' in \emph{Proc. IROS},
 2022.
+
+\bibitem{energymotor}
+\pending, ``Energy efficient control of electric motors,'' arXiv:2109.11113,
+2021.
+
+\bibitem{cliff}
+N. Cliff, ``Dominance statistics: Ordinal analyses to answer ordinal questions,''
+\emph{Psychol. Bull.}, vol. 114, no. 3, pp. 494--509, 1993.
+
+\bibitem{rudin}
+N. Rudin, D. Hoeller, P. Reist, and M. Hutter, ``Learning to walk in minutes
+using massively parallel deep reinforcement learning,'' in \emph{Proc. CoRL},
+2022.
+
+\bibitem{isaacgym}
+V. Makoviychuk et al., ``Isaac Gym: High performance GPU-based physics simulation
+for robot learning,'' arXiv:2108.10470, 2021.
+
+\bibitem{wtw}
+G. B. Margolis and P. Agrawal, ``Walk these ways: Tuning robot control for
+generalization with multiplicity of behavior,'' in \emph{Proc. CoRL}, 2023,
+pp. 22--31.
+
+\bibitem{playground}
+K. Zakka et al., ``MuJoCo Playground,'' arXiv:2502.08844, 2025.
+
+\bibitem{makhoul}
+J. Makhoul, ``Linear prediction: A tutorial review,'' \emph{Proc. IEEE}, vol. 63,
+no. 4, pp. 561--580, 1975.
+
+\bibitem{harris}
+F. J. Harris, ``On the use of windows for harmonic analysis with the discrete
+Fourier transform,'' \emph{Proc. IEEE}, vol. 66, no. 1, pp. 51--83, 1978.
+
+\bibitem{motorselect}
+\pending, ``Alternative metrics to select motors for quasi-direct drive
+actuators,'' arXiv:2202.12365, 2022.
+
+\bibitem{energyreg}
+\pending, ``Adaptive energy regularization for autonomous gait transition and
+energy-efficient quadruped locomotion,'' arXiv:2403.20001, 2024.
+
+\bibitem{gustafsson}
+F. Gustafsson, ``Determining the initial states in forward-backward filtering,''
+\emph{IEEE Trans. Signal Process.}, vol. 44, no. 4, pp. 988--992, 1996.
+
+\bibitem{concurrent}
+\pending, ``Concurrent training of a control policy and a state estimator for
+dynamic and robust legged locomotion,'' arXiv:2202.05481, 2022.
+
+\bibitem{delayaware}
+B. Chen, M. Xu, L. Li, and D. Zhao, ``Delay-aware model-based reinforcement
+learning for continuous control,'' \emph{Neurocomputing}, vol. 450,
+pp. 119--128, 2021.
+
+\bibitem{rtc}
+K. Black et al., ``Real-time execution of action chunking flow policies,'' in
+\emph{Proc. NeurIPS}, 2025.
+
+\bibitem{impactmit}
+\pending, ``Guiding energy-efficient locomotion through impact mitigation
+rewards,'' arXiv:2510.09543, 2025.
+
+\bibitem{compliantfeet}
+\pending, ``Energy-efficient quadruped locomotion with compliant feet,''
+arXiv:2605.14411, 2026.
 
 \bibitem{thermalaware}
 \pending, ``Learning thermal-aware locomotion policies for an
@@ -809,7 +980,7 @@ residual policy,'' arXiv:2605.27046, 2026.
 
 \bibitem{jorgensen}
 S. J. Jorgensen, J. Holley, F. Mathis, J. S. Mehling, and L. Sentis, ``Thermal
-recovery of multi-limbed robots with electric actuators,'' \emph{IEEE Robot.
+re\-cov\-ery of multi-limbed ro\-bots with elec\-tric ac\-tu\-a\-tors,'' \emph{IEEE Robot.
 Autom. Lett.}, vol. 4, no. 2, pp. 1077--1084, 2019.
 
 \bibitem{yamamori}
@@ -839,6 +1010,28 @@ arXiv:2607.09648, 2026.
 J. C. Weddington, B. P. \"{O}lveczky, and S. A. Baccus, ``Reinforcement learning
 on cost-constrained quadrupedal hardware,'' arXiv:2607.26434, 2026.
 
+\bibitem{act}
+T. Z. Zhao, V. Kumar, S. Levine, and C. Finn, ``Learning fine-grained bimanual
+manipulation with low-cost hardware,'' arXiv:2304.13705, 2023.
+
+\bibitem{diffusion}
+C. Chi, Z. Xu, S. Feng, E. Cousineau, Y. Du, B. Burchfiel, R. Tedrake, and
+S. Song, ``Diffusion policy: Visuomotor policy learning via action diffusion,''
+\emph{Int. J. Robot. Res.}, 2025.
+
+\bibitem{domainrand}
+J. Tobin, R. Fong, A. Ray, J. Schneider, W. Zaremba, and P. Abbeel, ``Domain
+randomization for transferring deep neural networks from simulation to the real
+world,'' arXiv:1703.06907, 2017.
+
+\bibitem{uposi}
+W. Yu, J. Tan, C. K. Liu, and G. Turk, ``Preparing for the unknown: Learning a
+universal policy with online system identification,'' in \emph{Proc. RSS}, 2017.
+
+\bibitem{actconstrained}
+\pending, ``Actuator-constrained reinforcement learning for high-speed
+quadrupedal locomotion,'' arXiv:2312.17507, 2023.
+
 \bibitem{caps}
 S. Mysore, B. Mabsout, R. Mancuso, and K. Saenko, ``Regularizing action policies
 for smooth control with reinforcement learning,'' in \emph{Proc. ICRA}, 2021.
@@ -857,6 +1050,22 @@ G. Christmann, Y. Luo, H. Mandala, and W. Chen, ``Benchmarking smoothness and
 reducing high-frequency oscillations in continuous control policies,'' in
 \emph{Proc. IROS}, 2024.
 
+\bibitem{l2c2}
+\pending, ``L2C2: Locally Lipschitz continuous constraint towards stable and
+smooth reinforcement learning,'' arXiv:2202.07152, 2022.
+
+\bibitem{regsmooth}
+\pending, ``Redesigning regularization for effective policy smoothing,''
+arXiv:2606.13169, 2026.
+
+\bibitem{qgrad}
+\pending, ``Stabilizing the Q-gradient field for policy smoothness in
+actor-critic methods,'' arXiv:2601.22970, 2026.
+
+\bibitem{compliancebounds}
+\pending, ``Task-specified compliance bounds for humanoids via
+Lipschitz-constrained policies,'' arXiv:2603.16180, 2026.
+
 \bibitem{gangapurwala}
 S. Gangapurwala, L. Campanaro, and I. Havoutis, ``Learning low-frequency motion
 control for robust and dynamic robot locomotion,'' in \emph{Proc. ICRA}, 2023.
@@ -868,6 +1077,13 @@ time discretization,'' in \emph{Proc. ICML}, 2019.
 \bibitem{tarc}
 A. Sukhija, L. Treven, J. Cheng, F. D\"{o}rfler, S. Coros, and A. Krause, ``TARC:
 Time-adaptive robotic control,'' arXiv:2510.23176, 2025.
+
+\bibitem{delaysurvey}
+\pending, ``Delays in reinforcement learning,'' arXiv:2309.11096, 2023.
+
+\bibitem{tnn}
+W. Kirchg\"{a}ssner et al., ``Thermal neural networks: Lumped-parameter thermal
+modeling with state-space machine learning,'' arXiv:2103.16323, 2021.
 
 \end{thebibliography}
 
