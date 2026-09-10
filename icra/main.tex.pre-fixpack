@@ -19,7 +19,6 @@
 \usepackage{booktabs}
 \usepackage{url}
 \usepackage[table]{xcolor}
-\usepackage{microtype}   % subtle tracking/protrusion; buys lines without visible change
 \usepackage{balance}
 
 % Default float policy pushes wide floats onto pages of their own, which on this
@@ -31,13 +30,6 @@
 \setcounter{topnumber}{3}
 \setcounter{bottomnumber}{2}
 \setcounter{totalnumber}{4}
-
-% Tighten the air around floats. IEEE defaults leave a lot of it.
-\setlength{\textfloatsep}{5pt plus 1pt minus 1pt}
-\setlength{\floatsep}{4pt plus 1pt minus 1pt}
-\setlength{\intextsep}{5pt plus 1pt minus 1pt}
-\setlength{\abovecaptionskip}{3pt plus 1pt minus 1pt}
-\setlength{\belowcaptionskip}{2pt plus 1pt minus 1pt}
 
 \pagestyle{empty}
 \thispagestyle{empty}
@@ -135,8 +127,11 @@ Neither hypothesis has been rigorously examined because the two mechanisms have
 never been evaluated independently. In electric actuators, winding copper loss
 scales quadratically with motor torque. Partitioning torque into its mean and
 zero-mean fluctuations reveals that posture torque and dynamic ripple add strictly
-in quadrature, $\mathcal{H} \propto \mathbb{E}[\tau^2] = \bar{\tau}^2 +
-\mathrm{Var}(\tau)$.
+in quadrature:
+\begin{equation}
+\mathcal{H} \propto \mathbb{E}[\tau^2] = \bar{\tau}^2 + \mathrm{Var}(\tau).
+\label{eq:quadrature}
+\end{equation}
 Because these terms add in quadrature, a substantial steady-state holding torque
 $\bar{\tau}$ mathematically suppresses the relative dissipation contribution of
 command variance $\mathrm{Var}(\tau)$. Consequently, whether command jitter
@@ -221,8 +216,11 @@ In standardized training environments such as \texttt{unitree\_rl\_mjlab}, PD
 gains are tuned for a target closed-loop natural frequency of $f_n = 10$\,Hz with
 a damping ratio $\zeta = 2.0$, and action scaling is normalized to $0.25\,e/k_p$,
 where $e$ is the actuator effort limit. Consequently, an action reversal between
-successive policy steps commands a peak transient $\tau_{\mathrm{step}} =
-2 k_p (0.25\,e/k_p) = 0.5\,e$.
+successive policy steps commands a peak transient
+\begin{equation}
+\tau_{\mathrm{step}} = k_p \cdot 2 \cdot \frac{0.25\,e}{k_p} = 0.5\,e .
+\label{eq:step}
+\end{equation}
 A full-scale command reversal thus demands an instantaneous torque transient
 equivalent to half of the joint's peak effort capacity. With $\zeta = 2.0$, the
 dominant closed-loop pole sits at 2.68\,Hz, yet the 50\,Hz command stream
@@ -341,8 +339,6 @@ command power scales inversely with static load (Table~\ref{tab:e1}).
 under single-joint excitation (E1).}
 \label{tab:e1}
 \centering
-\small
-\setlength{\tabcolsep}{3.5pt}
 \begin{tabular}{lrrrrr}
 \toprule
 Static load & $\rho{=}0.02$ & $0.05$ & $0.10$ & $0.20$ & $0.40$ \\
@@ -408,8 +404,6 @@ $\rho_{>5\,\mathrm{Hz}}$ is the coarse 5\,Hz cut, not the $-3$\,dB-bandwidth
 $\rho$.}
 \label{tab:ablation}
 \centering
-\small
-\setlength{\tabcolsep}{3.5pt}
 \begin{tabular}{lrrrr}
 \toprule
 Policy variant & $\Delta q_{\mathrm{rms}}$ & $\tau_{\mathrm{step}}$ RMS & Centroid & $\rho_{>5\,\mathrm{Hz}}$ \\
@@ -451,8 +445,6 @@ demonstrates the apparent efficacy of open-loop smoothing
 \caption{Open-loop command replay through an unloaded joint model (E2).}
 \label{tab:openloop}
 \centering
-\small
-\setlength{\tabcolsep}{3.5pt}
 \begin{tabular}{lrrc}
 \toprule
 Filtering scheme & $\mathcal{H}/\mathcal{H}_{\mathrm{ZOH}}$ & Preserved motion & Deployable \\
@@ -497,8 +489,6 @@ baseline Go1 policy (E5). The four components sum to 255.9 against an
 independently computed heat proxy of 256.2.}
 \label{tab:bands}
 \centering
-\small
-\setlength{\tabcolsep}{3.5pt}
 \begin{tabular}{llr}
 \toprule
 Band & Physical mechanism & Share \\
@@ -516,7 +506,7 @@ $>25$\,Hz   & ZOH staircase harmonics             & 1.6\% \\
 The ZOH staircase---the explicit focus of interpolation literature---accounts for
 only 1.6\% of motor dissipation. Discretionary thermal waste resides primarily
 between 5 and 25\,Hz. As predicted by the crossover, the reachable budget scales
-inversely with joint holding load\ifshowJointTable (Table~\ref{tab:joints})\fi: lightly loaded hip
+inversely with joint holding load (Table~\ref{tab:joints}): lightly loaded hip
 actuators reach 33--45\%, while weight-bearing calf actuators remain confined to
 14--17\%.
 
@@ -526,8 +516,6 @@ actuators reach 33--45\%, while weight-bearing calf actuators remain confined to
 sum of the 5--25\,Hz and $>25$\,Hz columns.}
 \label{tab:joints}
 \centering
-\small
-\setlength{\tabcolsep}{3.5pt}
 \begin{tabular}{lrrrrrr}
 \toprule
 Joint & $|\bar{\tau}|$ & DC & Gait & 5--25 & $>25$ & Reach. \\
@@ -561,8 +549,6 @@ evaporate due to phase lag (Table~\ref{tab:closedloop}).
 Cliff's $\delta$ is reported against ZOH.}
 \label{tab:closedloop}
 \centering
-\small
-\setlength{\tabcolsep}{3.5pt}
 \begin{tabular}{lrrrrr}
 \toprule
 Scheme & $\mathcal{H}/\mathcal{H}_{\mathrm{ZOH}}$ & Track. & $\delta(H)$ & $\delta(v)$ & Fall \\
@@ -596,7 +582,8 @@ The predictive filter achieves an 8.5\% total thermal reduction (Cliff's
 $\delta = -0.33$), representing a 47\% recovery of the 18.1\% reachable budget. In
 contrast, linear interpolation recovers only 4.4\% of total heat.
 
-Filtering the ZOH staircase harmonics does not drive overall thermal recovery\ifshowNyquistTable (Table~\ref{tab:nyquist})\fi. Schemes that halve the $>25$\,Hz term generate higher
+Filtering the ZOH staircase harmonics does not drive overall thermal recovery
+(Table~\ref{tab:nyquist}). Schemes that halve the $>25$\,Hz term generate higher
 net thermal dissipation, whereas the predictive filter leaves staircase harmonics
 untouched and attains the lowest total heat.
 
@@ -605,8 +592,6 @@ untouched and attains the lowest total heat.
 \caption{Actuator dissipation above Nyquist compared to total thermal load.}
 \label{tab:nyquist}
 \centering
-\small
-\setlength{\tabcolsep}{3.5pt}
 \begin{tabular}{lrr}
 \toprule
 Scheme & $>25$\,Hz term & Total $\mathcal{H}/\mathcal{H}_0$ \\
@@ -627,8 +612,6 @@ Predictive filter        & 4.02 & \textbf{0.915} \\
 $\mathcal{H}/\mathcal{H}_0$ (fall rate) (E3).}
 \label{tab:velocity}
 \centering
-\small
-\setlength{\tabcolsep}{3.5pt}
 \begin{tabular}{lrrr}
 \toprule
 Scheme & 0.5\,m/s & 1.0\,m/s & 0.3\,m/s + turn \\
@@ -654,7 +637,7 @@ smoothing filter at the bottom of the speed range.}
 
 The delayed zero-phase filter succeeds at 0.5\,m/s, with a 12\% heat reduction and
 zero falls, but destabilizes at 1.0\,m/s, with a 20\% fall rate and a 25.8\% heat
-increase\ifshowVelocityTable (Table~\ref{tab:velocity})\fi. Similarly, the 5\,Hz Butterworth induces
+increase (Table~\ref{tab:velocity}). Similarly, the 5\,Hz Butterworth induces
 falls in 70\% of episodes at 1.0\,m/s. Gating the predictive filter by joint load
 costs 2.5 percentage points of thermal relief but maintains tracking fidelity at
 0.995 of baseline at 1.0\,m/s without falls.
@@ -670,8 +653,6 @@ torque or energy penalties, demonstrates consistent budget recovery
 $R^2$ row is the closed-loop fit; the open-loop fit is a different quantity.}
 \label{tab:policies}
 \centering
-\small
-\setlength{\tabcolsep}{3.5pt}
 \begin{tabular}{lrr}
 \toprule
 Metric & Full reward & No effort terms \\
@@ -707,42 +688,68 @@ reachable budget from 18.1\% to 43.3\%. The predictive filter recovers 47\% and
 thermal savings differ by nearly $3\times$, 8.5\% against 23.5\%, the recovery
 ratio remains invariant.
 
-\subsection{Practical Guidelines}
+\section{Practical Engineering Guidelines}
 
-Four rules follow. \emph{Profile before intervening}: one baseline rollout gives
-the reachable budget and halving it estimates the closed-loop recovery, so a small
-reachable share means the effort belongs in posture or reward rather than in a
-filter. \emph{Do not buy zero phase with delay}: latency is taken out of the
-policy's own phase margin, and the resulting falls appear only at the top of the
-speed range, which is therefore where a candidate filter must be evaluated.
-\emph{Gate by load}: restrict smoothing to joints below $\bar{\tau} \approx
-\sqrt{\mathrm{Var}(\tau)}$, preserving tracking on stance joints while removing
-jitter from unloaded ones. \emph{Prefer effort regularization to
-\texttt{action\_rate}}: torque and energy penalties govern 89\% of the transient
-against 8\%.
+\textbf{Profile spectral splits before intervening.} A single baseline rollout
+establishes the reachable budget. Halving this reachable share provides an a
+priori estimate of closed-loop thermal recovery without modifying low-level code.
+If the reachable fraction is small, efforts must target kinematic posture or reward
+formulations rather than filtering.
+
+\textbf{Avoid delayed zero-phase smoothing.} Smoothing latency directly erodes
+feedback phase margin. Candidate smoothing architectures must be validated at
+maximum commanded velocities, where latency-induced falls manifest.
+
+\textbf{Deploy load-dependent gating.} Restrict command smoothing to joints
+operating below $\bar{\tau} \approx \sqrt{\mathrm{Var}(\tau)}$. This preserves
+tracking fidelity on stance joints while eliminating jitter on unloaded joints.
+
+\textbf{Prioritize effort regularization over action rate.} Reward terms
+penalizing joint torque and power dictate 89\% of transient thermal load, compared
+to 8\% governed by discrete finite-difference \texttt{action\_rate} penalties.
 
 \section{Related Work}
 
-\textbf{Thermal-aware locomotion.} Recent frameworks add motor temperature
-observations and thermal reward bounds, train thermal residual policies, or use
-contact-constrained inverse kinematics for multi-limbed humanoid thermal
-balancing~\cite{thermalaware,residual,jorgensen}. All require complete retraining;
-we instead characterize what a post-hoc intervention on a frozen checkpoint can
-and cannot do.
+\textbf{Thermal-aware locomotion.} Recent frameworks integrate motor temperature
+observations and thermal reward boundaries~\cite{thermalaware}, train thermal
+residual policies~\cite{residual}, or employ contact-constrained inverse kinematics
+for multi-limbed humanoid thermal balancing~\cite{jorgensen}. These approaches
+require complete retraining, whereas this work establishes post-hoc interventions
+on frozen policies.
 
-\textbf{Command interfaces, smoothness, and control rate.} Interfaces bridging
-high-level commands and motor drives include actuator reality shaping,
-high-frequency torque interpolation, voltage-realizable acceleration bounds,
-action-chunk post-optimization, B-spline policy representations, and forward delay
-compensation~\cite{yamamori,kourdis,vra,lipo,bspline,weddington}. Smoothness is
-otherwise pursued during training, through CAPS, Lipschitz-constrained
-architectures and spectral
-normalization~\cite{caps,lipschitz,specnorm,benchmark}, while the control-rate
-literature reports robust locomotion at 8\,Hz, Q-learning degeneration as the time
-step shrinks, and policies that choose their own action
-durations~\cite{gangapurwala,tallec,tarc}. None of this work measures physical
-copper loss or separates steady holding torque from command ripple, which is the
-gap addressed here.
+\textbf{Actuation interfaces.} Interfaces bridging high-level commands and motor
+drives include reality shaping via two-degree-of-freedom tracking
+controllers~\cite{yamamori}, high-frequency torque interpolation~\cite{kourdis},
+voltage-realizable acceleration bounds~\cite{vra}, action chunk
+post-optimization~\cite{lipo}, B-spline policy representations~\cite{bspline}, and
+forward delay compensation networks~\cite{weddington}. We characterize the
+energetic dissipation consequences of these interfaces.
+
+\textbf{Smoothness regularization.} Methods such as CAPS~\cite{caps},
+Lipschitz-constrained architectures~\cite{lipschitz}, and spectral
+normalization~\cite{specnorm} suppress command oscillations during training, and a
+benchmark study reports improved smoothness at small performance
+cost~\cite{benchmark}. However, these studies do not isolate physical copper loss
+from steady-state posture loads.
+
+\textbf{Control discretization.} Low-frequency execution has demonstrated
+robustness on ANYmal C at 8\,Hz~\cite{gangapurwala}, Q-learning degenerates as the
+time step shrinks~\cite{tallec}, and adaptive action-duration frameworks reduce
+average control frequency~\cite{tarc}. None of these works map electrical
+dissipation as an explicit function of control rate.
+
+\section{Limitations and Future Work}
+
+This study relies on rigid-body simulation using squared torque as a proxy for
+electrical winding loss under constant torque sensitivity $K_t$. Stator iron core
+losses, inverter switching dynamics, and winding thermal diffusion are omitted.
+Single-joint analytical sweeps omit ground impact dynamics. Evaluations are
+conducted on flat terrain using a single quadruped morphology, the Unitree Go1. The
+5\,Hz gait split is hand-chosen and has not been swept, and the reward ablations
+are single-seed over 8\,s intervals with no confidence intervals reported.
+Extending four-band spectral decomposition to humanoid platforms such as the
+Unitree G1, and validating the $3.2\Nm$ crossover on physical dynamometer
+testbenches, represent essential future directions.
 
 \section{Conclusion}
 
@@ -755,21 +762,14 @@ Consequently, causal predictive filtering with load-dependent gating provides a
 reliable framework to recover actuator thermal margins on frozen checkpoints
 without retraining.
 
-This study is simulation only: squared torque proxies winding copper loss under
-constant $K_t$, omitting iron losses, inverter switching and thermal diffusion;
-single-joint sweeps omit contact dynamics; and every result is measured on flat
-terrain on one quadruped. The 5\,Hz gait split is hand-chosen and has not been
-swept, and the reward ablations are single-seed over 8\,s with no confidence
-intervals. Extending the decomposition to a humanoid such as the Unitree G1, and
-confirming the $3.2\Nm$ crossover on a dynamometer, are the essential next steps.
-
 \balance
 \begin{thebibliography}{99}
-\itemsep 0pt \parskip 0pt \parsep 0pt
+\itemsep 0pt
 
 \bibitem{g1issue}
 NVIDIA Research, ``Ankle roll motors overheating on G1,''
-GR00T-WholeBodyControl, GitHub issue \#174, 2026.
+GR00T-WholeBodyControl, GitHub issue \#174, 2026. [Online]. Available:
+\url{https://github.com/NVlabs/GR00T-WholeBodyControl/issues/174}
 
 \bibitem{go2w}
 T. Matsuzawa, K. Irie, T. Yoshida, T. Suzuki, Y. Hara, and M. Tomono,
@@ -778,17 +778,19 @@ deep reinforcement learning,'' arXiv:2606.21387, 2026.
 
 \bibitem{unitreesdk}
 Unitree Robotics, ``unitree\_legged\_sdk,''
-\texttt{example\_py/example\_position.py}, GitHub, 2024.
+\texttt{example\_py/example\_position.py}, GitHub, 2024. [Online]. Available:
+\url{https://github.com/unitreerobotics/unitree_legged_sdk}
 
 \bibitem{lite3blog}
 DEEP Robotics, ``Physical AI 101: reinforcement learning with the Lite3,''
-company blog, 2025.
+company blog, 2025. [Online]. Available: \url{https://www.deeprobotics.us/news/}
 
 \bibitem{gom8010}
 Unitree Robotics, ``GO-M8010-6 motor data user manual,'' V1.0, 2023.
 
 \bibitem{j60}
-DEEP Robotics, ``J60 joint,'' product page, 2024.
+DEEP Robotics, ``J60 joint,'' product page, 2024. [Online]. Available:
+\url{https://www.deeprobotics.cn/en/wap/j60.html}
 
 \bibitem{maxon}
 maxon motor ag, ``EC max 30 \O30\,mm, brushless, 60\,W,'' datasheet, 2024.

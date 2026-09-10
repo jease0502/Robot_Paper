@@ -9,7 +9,8 @@ python build_icra.py      # stage figures from ../figsrc/out and ../pic, then bu
 latexmk -pdf main.tex     # build only, if figures are already staged
 ```
 
-Current build: **9 pages**, US Letter, clean compile, no overfull boxes.
+Current build: **8 pages**, US Letter, clean compile. Zero errors, zero overfull
+boxes, zero undefined references.
 
 ---
 
@@ -55,9 +56,10 @@ PDF's page count read back:
 |---|---|
 | Every display item shown (11 figures, 9 tables) | **11** |
 | Three raw plots off (the first default) | 10 |
-| **All eight optional items off (current build)** | **9** |
-| All eight off, plus one full-width core figure removed | 8 |
+| All eight optional items off | 9 |
 | Float-placement tuning (`[!tb]`, relaxed float fractions) | no change |
+| `microtype`, tightened float spacing, `\small` tables, compressed references | 9 |
+| **Above, plus the prose restructure below (current build)** | **8** |
 
 Turning items off **one at a time saved nothing**: floats reflow, so a single cut
 rarely crosses a page boundary. Only combinations move the count.
@@ -80,27 +82,35 @@ All eight are still in the source; each comes back by flipping its switch.
 The first five carry evidence that no table replaces. `showJointTable` is the
 uncomfortable one: the abstract quotes numbers the reader can no longer check.
 
-### Getting from 9 to 8
+### How the last page came out — no evidence was removed
 
-Each option was measured. None is free.
+The paper reached 8 pages by restructuring prose, not by deleting results. Every
+figure and table that was in the 9-page build is still in the 8-page build.
 
-1. **Drop one full-width core figure.** Removing Fig. 1 (architecture), Fig. 4
-   (band budget) or Fig. 5 (latency) each saves exactly one page. All three are
-   contribution-level evidence — Fig. 5 *is* contribution C3.
-2. **Cut prose.** The abstract runs ~270 words where 150–200 is typical, and the
-   C1–C5 contribution list restates it almost sentence for sentence. Removing the
-   duplication is the cheapest page available and costs no evidence.
-3. **Cut a section.** §VI Practical Engineering Guidelines partly restates §V.
+- **§ Practical Engineering Guidelines** stopped being a top-level section and
+  became § V-G, one paragraph with the four rules run in rather than four
+  headed paragraphs.
+- **Related Work** went from four themed paragraphs to two, with grouped
+  citations — the reference numbers now render as [9]–[11], [12]–[17],
+  [18]–[21], [22]–[24]. No reference was dropped.
+- **§ Limitations and Future Work** stopped being a section and became the second
+  paragraph of the Conclusion, condensed but with nothing omitted.
+- **Equations (1) and (2)** are inline. Neither was referenced by number, so
+  nothing points at a number that no longer exists.
 
-Option 2 is the recommendation: it is the only one that does not remove evidence.
-It requires an authorial decision, so it has not been done here.
+Two defects were also repaired, both introduced here rather than inherited:
+Tables 5, 6 and 8 were switched off while the prose still cited them, so they
+rendered as "Table ??" — the citing text is now inside the same switch as the
+float. And five tabulars ran past the column edge, by up to 114 pt, which had
+sheared the "Deployable" column off Table III; `\small` and a smaller
+`	abcolsep` bring them inside the column.
 
 ---
 
 ## Before submitting
 
 - [ ] **Re-verify the venue rules.** They changed between ICRA 2025 and 2027.
-- [ ] Get under 8 pages (currently 9).
+- [x] ~~Get under 8 pages.~~ Done: 8 pages, verified by rebuild.
 - [ ] Fill the `\pending` markers — paper ID, and reference [9]'s author list.
 - [ ] **Disclose generative-AI assistance.** ICRA 2027 requires it. The figures in
       `figs/` were produced by scripts written with AI assistance, as was much of
