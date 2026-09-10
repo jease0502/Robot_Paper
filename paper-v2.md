@@ -1,335 +1,566 @@
-# Where the Heat Actually Is: Decomposing Actuator Load in Learned Legged Locomotion and the Limits of Command Filtering
+# Decomposing Actuator Thermal Dissipation in Learned Legged Locomotion: Posture, Ripple, and Closed-Loop Filtering Limits
 
-*Draft v2 (user revision, 2026-09-10). Simulation only. No hardware results yet.*
+*Draft v3 (author rewrite, 2026-09-10). Simulation only. No hardware results yet.*
 
-Figures: `pic/` · Original draft: `paper-command-filtering-draft.md`
+Figures: `fig/` (vector, from `figsrc/*.py`) and `pic/` (original experiment plots) ·
+v1 source draft: `paper-command-filtering-draft.md` · reading page: `index.html`
+
+> **Status of the numbers.** Quantities come from the v1 source draft, which is authoritative
+> wherever the drafts differ. Where v1's own tables and prose disagree, the table is used;
+> Appendix B records every ruling and its basis. Quantities that exist in no draft, or that the
+> text asserts without a source, are marked `pending` and listed in Appendix C. Nothing here has
+> been inferred, interpolated, or reconstructed.
 
 ---
 
 ## Abstract
 
-Reinforcement learning (RL) locomotion policies frequently overheat commercial quadrupedal and humanoid actuators in operating regimes where vendor controllers remain thermally stable. The standard explanation attributes this dissipation to high-frequency command jitter, prescribing smoothness penalties in the reward function as the default remedy. However, this hypothesis has not been evaluated against the alternative explanation: that learned policies adopt postures demanding higher steady-state torque.
+Reinforcement learning (RL) locomotion policies frequently drive quadrupedal and humanoid actuators
+into thermal shutdown by continuously emitting high-rate position setpoints with high-frequency
+chattering that exceeds motor bandwidth. Mitigating this dissipation traditionally requires tedious
+reward re-tuning and policy retraining, while post-hoc command smoothing is commonly dismissed due to
+filter-induced phase lag that degrades feedback stability margins. In this paper, we demonstrate that
+command-side thermal dissipation can be effectively resolved post-hoc on frozen checkpoints without
+retraining. We show that electrical copper loss decomposes in quadrature into a steady-state posture
+term and a dynamic ripple term, revealing that their relative dominance is strictly dictated by
+joint-specific loading rather than by policy behavior. We identify this crossover analytically and
+empirically at 3.2 N·m on a Unitree Go1: load-bearing knee joints sit above this threshold and carry
+only 14–17% of their heat in filter-reachable bands, whereas lightly loaded hip joints sit below it and
+carry 33–45%. A Parseval decomposition demonstrates that zero-order-hold staircase harmonics contribute
+merely 1.6% of total heat, with discretionary losses concentrated in the 5–25 Hz in-band jitter. While
+open-loop replay suggests a 46% thermal reduction via zero-phase filtering, this benefit collapses in
+closed loop: a 40 ms smoothing latency induces falls in 20% of episodes at 1.0 m/s on a regularized
+policy and in 100% on an unregularized one. To bypass this latency penalty, we introduce a causal
+order-8 predictive filter combined with joint-load gating. This plug-and-play architecture recovers 47%
+and 54% of the reachable thermal budget across regularized and unregularized policies without causing
+falls. Finally, we show that conventional `action_rate` penalties fail to govern command-side heating
+(8% transient increase when ablated), whereas direct effort and energy penalties dictate the accessible
+thermal budget (89% increase).
 
-We decouple these mechanisms by demonstrating that electrical copper loss decomposes into a posture term and a ripple term. Because these terms add in quadrature, their relative dominance depends strictly on joint steady-state torque. We locate this crossover threshold analytically and empirically at 3.2 N·m on a Unitree Go1 quadruped. Load-bearing calf joints operate above this threshold, carrying only 14–17% of their heat in bands accessible to filtering; conversely, hip abduction joints operate below it, carrying 33–45% of their thermal dissipation in the filter-reachable band.
-
-Evaluating post-hoc command filtering on frozen policies, our spectral decomposition reveals that zero-order hold (ZOH) staircase harmonics account for only 1.6% of total heat, whereas 5–25 Hz command content accounts for the remaining discretionary dissipation. Although open-loop evaluation suggests a 46% thermal reduction via zero-phase filtering, this ceiling collapses in closed loop. Introducing latency to eliminate phase lag degrades feedback stability, inducing falls in 20% of episodes at 1.0 m/s on well-regularized policies and in every episode on unregularized policies. Conversely, a causal predictive filter combined with joint-load gating safely recovers 47–54% of the reachable thermal budget across both regularized and unregularized checkpoints without inducing falls. Finally, we demonstrate that commonly deployed `action_rate` penalties fail to govern command-side thermal load, whereas effort penalties dictate the reachable budget.
+**Index terms** — legged locomotion, reinforcement learning, actuator thermal load, copper loss,
+command smoothing, zero-order hold, spectral decomposition, closed-loop stability.
 
 ---
 
 ## 1. Introduction
 
-Legged locomotion policies trained via reinforcement learning (RL) frequently encounter actuator thermal limits during real-world deployment. On a Unitree G1 humanoid running a whole-body controller, ankle-roll actuators reach approximately 90 °C within 5 to 10 minutes during static standing, whereas the manufacturer's controller maintains the identical joints between 30 °C and 45 °C.[1] Similarly, on a Unitree A1 carrying a 3 kg payload, baseline RL policies trigger thermal protection in 5 to 7 minutes.[2], [3] Conversely, on a Go2-W, a learned policy plateaus at 60 °C over 51 minutes of walking, whereas the vendor controller diverges to 84 °C and shuts down at 34 minutes.[4] These observations confirm that policy behavior dictates thermal dissipation, yet the community remains divided regarding the governing mechanism.
+Legged locomotion policies trained via deep reinforcement learning (RL) routinely push actuator thermal
+limits in deployment, frequently triggering thermal shutdowns in operating regimes where
+vendor-supplied classical controllers operate stably. On a Unitree G1 humanoid running whole-body RL,
+ankle-roll actuators reach 90 °C within minutes of static standing, while the manufacturer's controller
+maintains the identical joints below 45 °C.[1] Conversely, on a wheeled-quadruped Go2-W, a learned
+policy remains thermally safe at 60 °C while the vendor controller overheats to 84 °C.[4] While it is
+undeniable that policy behavior governs motor thermal dissipation, the underlying physical mechanisms
+driving this dissipation remain a matter of contention.
 
-Two competing hypotheses currently prevail:
+Two competing hypotheses are actively debated. Under the **posture hypothesis**, excessive dissipation
+stems from high steady-state holding torques demanded by kinematically inefficient poses. Under the
+**jitter hypothesis**, dissipation is driven by high-frequency command oscillation — a ubiquitous
+symptom in RL policies, which continuously emit discrete-time setpoints that excite current ripple
+without producing useful mechanical work.
 
-- **The Posture Hypothesis.** Thermal dissipation is governed by the steady-state holding torque demanded by the chosen kinematic posture. This is supported by Go2-W trials, where a 24 °C difference at 50 Hz was attributed to periodic foot lifting that relieved steady joint torque.[4]
-- **The Jitter Hypothesis.** Excessive heating stems from high-frequency command oscillations that inflate RMS current without producing functional torque. This is supported by the G1 ankle-roll failure, where static holding torque is fixed by gravity, yet controllers exhibit a 45–60 K temperature disparity.[1]
-
-Neither hypothesis has measured both terms independently. Physical copper loss dictates that posture torque and dynamic torque ripple add in quadrature:
+Neither hypothesis has been rigorously examined because the two mechanisms have never been evaluated
+independently. In electric actuators, winding copper loss scales quadratically with motor torque.
+Partitioning torque into its mean and zero-mean fluctuations reveals that posture torque and dynamic
+ripple add strictly in quadrature:
 
 $$
-\mathcal{H} \;\propto\; \mathbb{E}[\tau^2] \;=\; \underbrace{\bar{\tau}^2}_{\text{posture}} \;+\; \underbrace{\mathrm{Var}(\tau)}_{\text{ripple}} .
+\mathcal{H} \;\propto\; \mathbb{E}[\tau^2] \;=\; \bar{\tau}^2 \;+\; \mathrm{Var}(\tau) .
 $$
 
-A zero-mean command ripple produces no net torque while contributing its full variance to thermal dissipation. Crucially, because the terms add in quadrature, a substantial steady torque $\bar{\tau}$ suppresses the relative contribution of $\mathrm{Var}(\tau)$. Whether command jitter governs thermal load is therefore a function of joint-specific loading rather than an intrinsic property of the policy.
+Because these terms add in quadrature, a substantial steady-state holding torque $\bar{\tau}$
+mathematically suppresses the relative dissipation contribution of command variance
+$\mathrm{Var}(\tau)$. Consequently, whether command jitter governs heating is not an intrinsic property
+of the policy, but a state dictated by joint-specific loading. Both camps are, in fact, observing
+different joints across the kinematic chain.
 
-In this work, we locate the crossover between these two regimes, quantify the thermal recovery attainable via command filtering on frozen policies, and identify the closed-loop stability boundaries that govern filter deployment.
+This insight highlights a fundamental engineering dilemma. In standard practice, researchers attempt to
+suppress command jitter by laboriously retuning reward formulations and retraining policies from
+scratch — a computationally burdensome and often fragile process. Conversely, deploying post-hoc
+command smoothing on frozen checkpoints is traditionally avoided: naive low-pass filtering inevitably
+injects phase lag into the feedback path. Because the learned policy operates as a high-gain feedback
+controller, this added latency directly erodes closed-loop stability margins, causing catastrophic
+falls at operating speeds.
+
+In this paper, we resolve this conflict and demonstrate that command-side thermal dissipation can be
+effectively mitigated post-hoc on frozen checkpoints without retraining. We identify the analytical
+crossover where steady load overtakes command ripple, quantify the closed-loop latency boundaries that
+cause filtered policies to destabilize, and propose a lightweight, predictive, load-gated filter that
+safely recovers the reachable thermal budget.
 
 ### Contributions
 
-1. **Spectral Heat Decomposition.** We formulate an exact Parseval-based decomposition separating joint torque into steady posture, gait-synchronous torque, in-band jitter (5–25 Hz), and ZOH discretization harmonics (> 25 Hz). The reachable budget is 18.1% for a well-regularized Go1 policy and 43.3% for a policy trained without effort penalties, with ZOH harmonics accounting for only 1.6%.
-2. **Thermal Load Crossover.** We establish that out-of-band heating follows $\mathcal{H} = \mathcal{H}_0 + \kappa\,\rho/(1-\rho)$ to within 0.45% residual. Posture overtakes ripple at $\bar{\tau} \approx \sqrt{\mathrm{Var}(\tau)} \approx 3.2$ N·m on a Go1. Joints below this threshold exhibit two to three times the filter-reachable heat share of joints operating above it.
-3. **Closed-Loop Latency Penalties.** We demonstrate that the open-loop 46% thermal reduction ceiling collapses to 8.5% in closed loop (Cliff's $\delta = -0.33$). Introducing a 40 ms latency to achieve zero-phase smoothing compromises policy feedback margins, resulting in fall rates of 20% at 1.0 m/s on regularized policies and 100% on unregularized policies.
-4. **Predictive Gated Filtering.** An order-8 causal linear autoregressive filter recovers 47% and 54% of the filter-reachable budget across regularized and unregularized policies, respectively, without inducing falls. Gating the filter by joint load preserves tracking fidelity.
-5. **Reward Ablation Analysis.** We show that `action_rate` penalties increase step transients by only 8% when ablated, whereas effort and energy penalties govern 89% of the transient magnitude.
+- **C1. Spectral heat decomposition.** We establish an exact Parseval-based decomposition separating
+  actuator dissipation into static posture, gait fundamentals (0–5 Hz), in-band jitter (5–25 Hz), and
+  zero-order-hold (ZOH) discretization harmonics (> 25 Hz). We show that ZOH harmonics account for
+  merely 1.6% of heat, identifying the 5–25 Hz band as the true locus of discretionary dissipation.
+- **C2. Quadrature thermal crossover.** We analytically formulate and empirically confirm the thermal
+  crossover at $\bar{\tau} \approx \sqrt{\mathrm{Var}(\tau)} \approx 3.2$ N·m on a Unitree Go1. Heavily
+  loaded knee joints operate above this threshold, carrying only 14–17% filterable heat, whereas
+  lightly loaded hip joints operate below it, carrying 33–45% — establishing which joints are
+  physically amenable to filtering.
+- **C3. Latency failure boundary in closed loop.** We demonstrate that open-loop filtering gains, up to
+  46% thermal reduction, evaporate in closed-loop execution. Introducing 40 ms of filter latency
+  degrades feedback stability, precipitating a 20% fall rate at 1.0 m/s on a regularized policy and
+  100% on an unregularized baseline.
+- **C4. Retraining-free predictive gated filtering.** To bypass the latency penalty, we introduce an
+  order-8 linear predictive compensator coupled with physics-informed joint-load gating. Without
+  retraining the policy, this plug-and-play middleware recovers 47% and 54% of the reachable thermal
+  budget across regularized and unregularized checkpoints without inducing falls.
+- **C5. Reward regularization diagnosis.** Through spectral ablation, we reveal that the conventional
+  `action_rate` penalty has negligible authority over command-side thermal load, inducing only an 8%
+  transient increase when ablated, whereas direct torque and energy penalties dictate the accessible
+  thermal budget, inducing an 89% increase.
 
 ---
 
 ## 2. Actuation Pipeline and Problem Formulation
 
-Commercial quadruped and humanoid architectures execute proportional-derivative (PD) loops directly on the motor drive rather than within the policy process. The policy outputs position targets at $f_{\text{pol}}$, which are transmitted across a communication bus to motor-side PD loops running at higher frequencies. On Unitree systems, the policy executes at 50 Hz and low-level commands are written at 500 Hz.[62]
-DeepRobotics Lite3 deployments run a 1 kHz state loop.[63] Vendor datasheets give a communication
-control frequency of 6 kHz for the Unitree GO-M8010-6[6] and 1 kHz for the DeepRobotics J60.[61]
-The policy rate used in Lite3 deployments is `pending`: an earlier draft put it near 83 Hz, but no
-public source states that figure and the only published rate we could find is roughly 50 Hz.
+Commercial quadruped and humanoid architectures execute proportional-derivative (PD) tracking loops on
+distributed motor drives rather than within the policy loop. As illustrated in Fig. 1, the policy emits
+joint position targets $q^*$ at frequency $f_{\text{pol}}$. These setpoints cross a communication bus
+to motor-side PD loops running at a substantially higher frequency. In Unitree systems, the policy
+executes at $f_{\text{pol}} = 50$ Hz while low-level commands are written at 500 Hz;[62] DeepRobotics
+Lite3 platforms deploy policies near 83 Hz over a 1 kHz state loop.[63] Actuator-level commutation
+loops run even faster, reaching 6 kHz on the Unitree GO-M8010-6[6] and 1 kHz on the DeepRobotics
+J60.[61]
 
-A zero-order hold (ZOH) interfaces the policy to the low-level loop. At 50 Hz into 500 Hz, each command is held for 10 ticks before stepping discontinuously, producing an instantaneous proportional transient of $k_p \Delta q$ prior to rotor displacement.
+![Fig. 1 — system architecture](fig/fig1-architecture.svg)
 
-In standardized environments such as `unitree_rl_mjlab`, PD gains are derived from a target closed-loop natural frequency of 10 Hz and a damping ratio of $\zeta = 2.0$, with action scaling set to $0.25\,e/k_p$, where $e$ represents the effort limit. Consequently, an action reversal between successive policy steps commands a peak transient:
+A zero-order hold (ZOH) sits at the interface between the high-level policy and low-level drive.
+Operating at 50 Hz into 500 Hz, each setpoint is held constant across ten sub-ticks before stepping
+discontinuously, producing an instantaneous proportional transient of $k_p \Delta q$ prior to
+mechanical rotor acceleration.
 
-$$\tau_{\text{step}} = k_p \cdot 2 \cdot \frac{0.25\,e}{k_p} = 0.5\,e .$$
+In standardized training environments such as `unitree_rl_mjlab`, PD gains are tuned for a target
+closed-loop natural frequency of $f_n = 10$ Hz with a damping ratio $\zeta = 2.0$, and action scaling
+is normalized to $0.25\,e/k_p$, where $e$ is the actuator effort limit. Consequently, an action
+reversal between successive policy steps commands a peak transient:
 
-A full-scale action reversal commands a transient equal to half the joint torque limit. With $\zeta = 2.0$, the dominant closed-loop pole is located at 2.68 Hz, whereas the 50 Hz command stream contains spectral content up to the 25 Hz Nyquist limit.
+$$
+\tau_{\text{step}} \;=\; k_p \cdot 2 \cdot \frac{0.25\,e}{k_p} \;=\; 0.5\,e .
+$$
+
+A full-scale command reversal thus demands an instantaneous torque transient equivalent to half of the
+joint's peak effort capacity. With $\zeta = 2.0$, the dominant closed-loop pole sits at 2.68 Hz, yet
+the 50 Hz command stream transmits spectral content up to its 25 Hz Nyquist boundary. The energetic
+consequences of this frequency mismatch constitute the core focus of this study.
 
 ---
 
-## 3. Metrics
+## 3. Metrics and Analytical Framework
 
-**Spectral Heat Decomposition.** Applying Parseval's theorem to joint torque partitioned into mean and zero-mean components yields:
+### 3.1 Spectral heat decomposition
 
-$$ \mathbb{E}[\tau^2] \;=\; \bar\tau^2 \;+\; \int_{0}^{f_g} S_\tau(f)\,\mathrm{d}f \;+\; \int_{f_g}^{f_{\text{Nyq}}} S_\tau(f)\,\mathrm{d}f \;+\; \mathbb{E}_k\!\left[\mathrm{Var}_{\text{sub}}(\tau)\right] , $$
+By applying Parseval's theorem to joint torque partitioned into steady-state and fluctuating
+components, total expected dissipation is expressed as:
 
-where $f_g = 5$ Hz isolates fundamental gait frequencies, $f_{\text{Nyq}} = 25$ Hz represents the policy Nyquist frequency, and $\mathbb{E}_k[\mathrm{Var}_{\text{sub}}(\tau)]$ denotes intra-step variance above Nyquist arising from ZOH discretization. The sum of the final two terms defines the **reachable share** available to command-stream filtering.
+$$
+\mathbb{E}[\tau^2] \;=\; \bar{\tau}^2 \;+\; \int_{0}^{f_g} S_\tau(f)\,\mathrm{d}f \;+\; \int_{f_g}^{f_{\text{Nyq}}} S_\tau(f)\,\mathrm{d}f \;+\; \mathbb{E}_k\!\left[\mathrm{Var}_{\text{sub}}(\tau)\right] ,
+$$
 
-**Ripple Fraction.** When power spectral density is unavailable, we compute the joint-level ripple fraction:
+where $f_g = 5$ Hz isolates fundamental gait frequencies, $f_{\text{Nyq}} = 25$ Hz is the policy
+Nyquist frequency, and $\mathbb{E}_k[\mathrm{Var}_{\text{sub}}(\tau)]$ represents the intra-step
+variance above Nyquist caused by ZOH discretization. The sum of the final two terms defines the
+**reachable thermal budget**: the strict theoretical upper bound of dissipation that any command-stream
+filter can influence.
 
-$$ r \;=\; \frac{\mathrm{Var}(\tau)}{\bar{\tau}^2 + \mathrm{Var}(\tau)} . $$
+### 3.2 Ripple fraction and out-of-band power
 
-**Out-of-Band Command Power ($\rho$).** Command-side jitter is quantified independently of the physical plant via:
+When full power spectral density data is unavailable, joint torque fluctuation is quantified via the
+joint-level ripple fraction:
 
-$$ \rho \;=\; \frac{\int_{f_c}^{f_{\text{Nyq}}} S_q(f)\,\mathrm{d}f}{\int_{0}^{f_{\text{Nyq}}} S_q(f)\,\mathrm{d}f} , $$
+$$
+r \;=\; \frac{\mathrm{Var}(\tau)}{\bar{\tau}^2 + \mathrm{Var}(\tau)} .
+$$
 
-where $f_c$ is the joint $-3$ dB closed-loop bandwidth, 15.3 Hz for the Go1 model of §4. Table 2 reports a
-second, coarser cut of the same quantity taken at 5 Hz; it is written $
-ho_{>5\,\mathrm{Hz}}$ throughout
-and is not interchangeable with $
-ho$.
+Independent of plant dynamics, command-side roughness is characterized by the out-of-band command power
+fraction:
 
-**Thermal Proxy.** We quantify motor thermal load via $\mathcal{H} = \frac{1}{T}\int_0^T \tau^2\,\mathrm{d}t$, proportional to $I_{\text{rms}}^2 R$ under a constant torque coefficient. Stator thermal dynamics justify using squared torque rather than absolute torque: on calibrated brushless actuators, the winding thermal time constant is 3.12 s compared to 777 s for the entire motor housing (a factor of 249).[7] Reported driver temperatures lag winding heat, making current-based proxies the relevant primary metric.[8]
+$$
+\rho \;=\; \frac{\int_{f_c}^{f_{\text{Nyq}}} S_q(f)\,\mathrm{d}f}{\int_{0}^{f_{\text{Nyq}}} S_q(f)\,\mathrm{d}f} ,
+$$
+
+where $f_c$ is the joint's $-3$ dB closed-loop bandwidth, 15.3 Hz for the Unitree Go1 model. A coarser
+metric evaluated at 5 Hz, denoted $\rho_{>5\,\mathrm{Hz}}$, is also used to track broadband
+high-frequency content. The two are different cuts and are not interchangeable.
+
+### 3.3 Thermal loss proxy
+
+Motor thermal dissipation is quantified via the metric $\mathcal{H} = \frac{1}{T}\int_0^T
+\tau^2\,\mathrm{d}t$, which is proportional to winding copper loss $I_{\text{rms}}^2 R$ under a
+constant torque sensitivity $K_t$. Quadratic torque evaluation is physically validated by stator
+thermal dynamics: on calibrated brushless actuators, the winding thermal time constant is 3.12 s,
+compared to 777 s for the motor housing — a disparity factor of 249.[7] Because driver thermistors
+exhibit significant thermal lag relative to winding junctions, current-based squared torque serves as
+the primary ground-truth metric.[8]
 
 ---
 
 ## 4. Experimental Setup
 
-We evaluate filtering through four experimental protocols. The labels are those of the source draft;
-there is no E4, as the label was never assigned.
+Four experimental protocols are evaluated. The labels are those of the source draft; there is no E4, as
+the label was never assigned.
 
-- **E1 (Single Joint, Synthetic Commands).** A second-order joint modeled on the Go1 ($k_p = 35$, damping 0.5, armature 0.005 kg·m², $f_n = 13.3$ Hz, $\zeta = 0.60$, $-3$ dB bandwidth at 15.3 Hz) is driven by a 2 Hz sinusoidal command with bandpass noise injected above bandwidth. Commands are sampled at 50 Hz, held via ZOH to 500 Hz, and integrated at 5 kHz. Constant load torques are swept from 0 to 20 N·m.
-- **E2 (Recorded Commands, Open Loop).** Trajectories recorded from seven Go1 policies are replayed through the single-joint model across different filtering schemes. Preserved motion is benchmarked against the ZOH trajectory low-passed at 5 Hz.
-- **E3 (Closed Loop, Full Quadruped).** A frozen Go1 policy is deployed in MuJoCo (50 Hz policy, 500 Hz physics, 10 substeps per policy step). The filter operates inside the closed loop. We evaluate 10 episodes of 500 steps across three commanded velocities (0.5 m/s, 1.0 m/s, and 0.3 m/s with turning) under matched random seeds and noise.
-- **E5 (Spectral Decomposition).** Evaluated under baseline ZOH over 30 rollouts across three velocity commands. Mean torque per policy step is logged at 50 Hz, with spectral splits at 5 Hz and 25 Hz, and intra-step variance providing the > 25 Hz component.
+- **E1 (single joint, synthetic signals).** A second-order joint model representative of the Unitree
+  Go1 ($k_p = 35$, damping 0.5, rotor inertia 0.005 kg·m², $f_n = 13.3$ Hz, $\zeta = 0.60$, $-3$ dB
+  bandwidth 15.3 Hz) is excited by a 2 Hz sinusoidal command injected with bandpass noise above
+  bandwidth. Commands are sampled at 50 Hz, held via ZOH to 500 Hz, and integrated at 5 kHz. Static
+  load torques are swept from 0 to 20 N·m.
+- **E2 (recorded trajectories, open loop).** Trajectories logged from seven Go1 policies across reward
+  ablations are replayed through the single-joint model under candidate filter configurations.
+  Preserved motion is benchmarked against the ZOH trajectory low-passed at 5 Hz.
+- **E3 (closed loop, full quadruped).** A frozen Go1 policy is executed in MuJoCo at a 50 Hz policy
+  rate and 500 Hz physics rate, ten substeps per policy step, with the candidate filtering pipeline
+  active inside the feedback loop. Ten 500-step episodes are evaluated at each of three velocity
+  commands (0.5 m/s, 1.0 m/s, and 0.3 m/s with yaw rate) across matched seeds and observation noise,
+  giving $n = 30$ per scheme.
+- **E5 (spectral decomposition).** Identical to E3 under baseline ZOH over 30 rollouts. Mean torque per
+  policy step is recorded at 50 Hz, with spectral cuts at 5 Hz and 25 Hz, and intra-step variance
+  supplying the > 25 Hz component.
 
-**Predictive Filter Architecture.** An order-8 linear autoregressive model AR(8) is fitted via least squares to baseline rollouts and rolled forward two steps, enabling zero-latency application of a symmetric Hann window.
+**Predictive compensator and load gate.** An order-8 linear autoregressive model, AR(8), is fitted via
+least squares on baseline rollouts and rolled forward two steps. This formulation enables the
+application of a symmetric Hann window without awaiting future samples, eliminating filter phase lag.
+Joints whose mean absolute torque $|\bar{\tau}|$ falls below the 3.2 N·m threshold are filtered, whereas
+heavily loaded joints pass through unmodified.
 
-**Load Gate.** Joints exhibiting mean absolute torque $|\bar{\tau}|$ below the 3.2 N·m crossover are filtered; remaining joints pass through unmodified.
+![Fig. 2 — three ways to smooth a command](fig/fig5-three-filters.svg)
 
 ---
 
-## 5. Results
+## 5. Results and Empirical Analysis
 
-### 5.1 Load-Dependent Thermal Crossover
+### 5.1 Load-dependent thermal crossover
 
-Holding motion amplitude constant, the thermal penalty of out-of-band command power depends on joint static loading.
+Holding kinematic motion amplitude constant, the thermal penalty of out-of-band command power scales
+inversely with static load.
 
-| Static Load | $\rho=0.02$ | $0.05$ | $0.10$ | $0.20$ | $0.40$ |
+| Static load | $\rho=0.02$ | $\rho=0.05$ | $\rho=0.10$ | $\rho=0.20$ | $\rho=0.40$ |
 |---|---|---|---|---|---|
-| 0 N·m | 1.81 | 3.08 | 5.38 | 10.86 | 27.30 |
+| 0 N·m | 1.81 | 3.08 | 5.38 | **10.86** | 27.30 |
 | 2 N·m | 1.15 | 1.40 | 1.84 | 2.89 | 6.04 |
 | 5 N·m | 1.03 | 1.08 | 1.16 | 1.36 | 1.96 |
 | 10 N·m | 1.01 | 1.02 | 1.04 | 1.09 | 1.25 |
-| 20 N·m | 1.00 | 1.00 | 1.01 | 1.02 | 1.06 |
+| 20 N·m | 1.00 | 1.00 | 1.01 | **1.02** | 1.06 |
 
-*Table 1: Thermal dissipation relative to $\rho = 0$ across load levels (three seeds).*
+*Table 1: Thermal dissipation relative to $\rho = 0$ across static load levels under single-joint
+excitation (E1).*
 
-![E1 load sweep](pic/e1-rho-sweep.png)
+![Fig. 3 — single-joint load sweep](pic/e1-rho-sweep.png)
 
-At $\rho = 0.2$, an unloaded joint dissipates 10.9 times the heat while moving 1.8% more, whereas a joint carrying 20 N·m dissipates 2% more heat. In the unloaded condition, dissipation follows $\mathcal{H} = \mathcal{H}_0 + \kappa\,\rho/(1-\rho)$ with $\kappa = 38.4$ and a maximum residual of 0.45%. The crossover threshold, where $\bar{\tau}^2 = \mathrm{Var}(\tau)$, is 3.2 N·m.
+At $\rho = 0.20$, an unloaded joint dissipates 10.9 times the heat of an uncorrupted command while
+altering joint motion by only 1.8%. In contrast, a joint supporting a 20 N·m static load exhibits
+merely a 2% thermal increase under the same command roughness. Under unloaded conditions, dissipation
+follows
 
-On the Go1 quadruped, mean $|\tau|$ per joint family is:
+$$
+\mathcal{H} \;=\; \mathcal{H}_0 \;+\; \kappa\,\frac{\rho}{1-\rho}
+$$
 
-- Hip abduction: 1.24–1.48 N·m
-- Thigh: 2.00–2.59 N·m
-- Calf: 5.88–6.88 N·m
+with $\kappa = 38.4$ and a maximum residual of 0.45%. The crossover where posture loss equals ripple
+loss, $\bar{\tau}^2 = \mathrm{Var}(\tau)$, emerges at 3.2 N·m.
 
-Eight of the twelve joints operate below the 3.2 N·m threshold; the four knee joints operate above it. This explains why posture dominates knee dissipation while jitter dominates non-weight-bearing joints, such as the G1 ankle-roll motor.
+On the Unitree Go1, measured mean absolute joint torques $|\bar{\tau}|$ average 1.24–1.48 N·m for hip
+abduction, 2.00–2.59 N·m for thighs, and 5.88–6.88 N·m for calves. Eight of the twelve joints operate
+below the 3.2 N·m crossover, while the four knee actuators operate well above it. Consequently, posture
+demands dominate knee dissipation, whereas jitter drives overheating in lightly loaded joints.
 
-### 5.2 Effort Terms Govern Jitter; `action_rate` Does Not
+![Fig. 4 — the quadrature crossover](fig/fig2-crossover.svg)
 
-We analyze command statistics across seven ablated Go1 policies (single seed, 8 s duration).
-Table 2 reports five representative variants; statistics for the remaining two are `pending`.
+### 5.2 Effort terms govern jitter; action rate does not
 
-| Policy Variant | $\Delta q_{\text{rms}}$ (rad) | $\tau_{\text{step}}$ RMS (N·m) | Centroid (Hz) | $\rho_{>5\,\mathrm{Hz}}$ |
+Command-side statistics were evaluated across ablated Go1 policy checkpoints (single-seed, 8 s
+rollouts). Table 2 reports five representative variants of the seven trained; statistics for the
+remaining two are `pending`.
+
+| Policy variant | $\Delta q_{\text{rms}}$ (rad) | $\tau_{\text{step}}$ RMS (N·m) | Centroid (Hz) | $\rho_{>5\,\mathrm{Hz}}$ |
 |---|---|---|---|---|
 | Full reward baseline | 0.0668 | 2.34 | 3.29 | 0.051 |
-| No `action_rate` | 0.0723 | 2.53 (+8%) | 3.43 | 0.119 |
+| No `action_rate` | 0.0723 | **2.53 (+8%)** | 3.43 | 0.119 |
 | No gait terms | 0.0747 | 2.62 (+12%) | 4.98 | 0.146 |
-| No torques + energy | 0.1267 | 4.43 (+89%) | 5.44 | 0.363 |
+| No `torques` + `energy` | 0.1267 | **4.43 (+89%)** | 5.44 | 0.363 |
 | Task terms only | 0.1586 | 5.55 (+137%) | 10.44 | 0.898 |
 
-*Table 2: Command-side spectral properties across reward ablations.*
+*Table 2: Command-side spectral properties across reward ablations (E2). $\rho_{>5\,\mathrm{Hz}}$ is
+the coarse 5 Hz cut of §3.2, not the $-3$ dB-bandwidth $\rho$.*
 
-![command spectrum](pic/command-spectrum.png)
+![Fig. 5 — command spectra across reward ablations](pic/command-spectrum-annotated.png)
 
-Ablating `action_rate` increases step transients by 8%. In contrast, removing torque and energy penalties increases step transients by 89%. In our evaluations, direct effort minimization governs command-side thermal load rather than finite-difference action smoothing.
+Ablating the standard `action_rate` penalty increases step transients by only 8%. Conversely,
+eliminating joint torque and energy regularizations inflates step transients by 89%. Direct effort
+minimization, rather than discrete action smoothing, serves as the primary regularizer of command-side
+thermal load.
 
-### 5.3 Open-Loop Filtering and the Cost of Phase Lag
+### 5.3 Open-loop filtering and the cost of phase lag
 
-Replaying full-reward policy commands through the unloaded joint yields:
+Replaying baseline trajectories through the unloaded single-joint model demonstrates the apparent
+efficacy of open-loop smoothing.
 
-| Filtering Scheme | Heat ($H/H_{\text{ZOH}}$) | Preserved Motion | Deployable |
+| Filtering scheme | Heat $\mathcal{H}/\mathcal{H}_{\text{ZOH}}$ | Preserved motion | Deployable |
 |---|---|---|---|
 | Baseline ZOH | 1.000 | 1.000 | — |
 | Linear interpolation | 0.696 | 0.819 | Yes |
 | Causal Butterworth (12 Hz) | 0.588 | 0.745 | Yes |
-| Predictive filter | 0.428 | 0.741 | Yes |
-| Zero-phase Butterworth (12 Hz) | 0.540 | 0.995 | No |
+| Predictive filter | **0.428** | 0.741 | Yes |
+| Zero-phase Butterworth (12 Hz) | 0.540 | **0.995** | No |
 
-*Table 3: Open-loop command replay through an unloaded joint.*
+*Table 3: Open-loop command replay through an unloaded joint model (E2).*
 
-![open loop command filters](pic/e3-command-filters.png)
+![Fig. 6 — open-loop filter sweep](pic/e3-command-filters.png)
 
-Zero-phase filtering reduces thermal dissipation by 46% while matching the in-band trajectory to within 0.0004 rad. However, the causal version of the identical filter preserves only 74.5% of intended motion due to phase lag, imposing motion penalties of 25.0, 24.8, and 22.9 percentage points at 0, 2, and 10 N·m loads, respectively.
+Zero-phase filtering achieves a 46% thermal reduction while preserving 99.5% of intended trajectory
+motion. However, a causal implementation of the identical filter preserves only 74.5% of intended
+motion due entirely to phase lag.
 
-Out-of-sample accuracy of the **open-loop** command predictor reaches $R^2 = 0.679$ on the full-reward
-policy, 0.385 without effort terms, and 0.059 without regularization. A separate predictor fitted for the
-closed-loop experiments reports different values; see §5.6 and Appendix B, ruling B1. Policies exhibiting higher command jitter are less predictable, constraining open-loop reconstruction.
+![Fig. 7 — phase lag, animated](pic/anim-phase-lag.gif)
 
-### 5.4 Spectral Allocation of the Thermal Budget
+Out-of-sample *open-loop* command prediction accuracy reaches $R^2 = 0.679$ on the full-reward policy,
+declining to 0.385 without effort terms, and collapsing to 0.059 on an unregularized checkpoint. A
+separate predictor fitted for the closed-loop experiments reports different values; see §5.6 and
+Appendix B, ruling B1.
 
-Closed-loop spectral decomposition of baseline Go1 locomotion rollouts confirms the physical limits of filtering:
+### 5.4 Spectral allocation of the thermal budget
 
-| Band | Physical Mechanism | Share of Total Heat |
+Exact Parseval decomposition across 30 closed-loop rollouts sets the theoretical ceiling for command
+filtering.
+
+| Band | Physical mechanism | Share of total heat |
 |---|---|---|
 | DC | Posture: static body support | 31.3% |
-| 0–5 Hz | Gait: torque modulation required for walking | 50.6% |
-| 5–25 Hz | In-band jitter: accessible via low-pass filtering | 16.5% |
-| > 25 Hz | ZOH staircase harmonics: discretization artifacts | 1.6% |
-| **Total reachable** | Combined jitter and discretization harmonics | **18.1%** |
+| 0–5 Hz | Gait: torque modulation walking requires | 50.6% |
+| 5–25 Hz | In-band jitter: reachable by low-pass filtering | 16.5% |
+| > 25 Hz | ZOH staircase harmonics: discretization artefacts | 1.6% |
+| **Total reachable** | In-band jitter and staircase harmonics combined | **18.1%** |
 
-*Table 4: Exact closed-loop torque spectral decomposition across 30 rollouts. The components sum to 255.9, matching the independently computed heat proxy of 256.2 to within 0.1%.*
+*Table 4: Exact closed-loop torque spectral decomposition across 30 rollouts on the baseline Go1 policy
+(E5). The four components sum to 255.9 against an independently computed heat proxy of 256.2, agreeing
+to within 0.1%.*
 
-The ZOH staircase accounts for only 1.6% of total heat. Discretionary dissipation resides between 5 and 25 Hz (16.5%). Furthermore, the reachable budget varies systematically across joint families:
+The ZOH staircase — the explicit focus of interpolation literature — accounts for only 1.6% of motor
+dissipation. Discretionary thermal waste resides primarily between 5 and 25 Hz.
 
-| Joint Family | Mean $\vert\tau\vert$ (N·m) | DC | Gait | 5–25 Hz | > 25 Hz | Reachable |
+| Joint family | Mean $|\bar{\tau}|$ (N·m) | DC | Gait (0–5 Hz) | 5–25 Hz | > 25 Hz | Reachable share |
 |---|---|---|---|---|---|---|
 | Hips | 1.2–1.5 | 7–21% | 47–54% | 33–45% | 0.3–0.4% | **33–45%** |
 | Thighs | 2.0–2.6 | 2–19% | 56–78% | 16–29% | 3.0–4.0% | **20–32%** |
 | Calves | 5.9–6.9 | 32–38% | 45–54% | 13–16% | 1.1–1.6% | **14–17%** |
 
-*Table 5: Joint-specific torque budget decomposition.*
+*Table 5: Joint-specific torque budget decomposition (E5). Reachable share is the sum of the 5–25 Hz
+and > 25 Hz columns.*
 
-### 5.5 Closed-Loop Filtering: Latency Induces Instability
+![Fig. 8 — the heat budget, both policies](fig/fig3-band-budget.svg)
 
-When command filters are deployed within the feedback loop, the open-loop benefits collapse.
+As predicted by §5.1, the reachable thermal budget scales inversely with joint holding load: lightly
+loaded hip actuators exhibit reachable shares of 33–45%, while weight-bearing calf actuators remain
+confined to 14–17%.
 
-| Scheme | $H/H_{\text{ZOH}}$ | Tracking Error | $\delta(H)$ | $\delta(\text{vel})$ | Fall Rate ($n{=}30$) |
+### 5.5 Closed-loop filtering: latency induces instability
+
+When deployed inside the active feedback control loop, open-loop filtering gains evaporate due to phase
+lag.
+
+| Scheme | $\mathcal{H}/\mathcal{H}_{\text{ZOH}}$ | Tracking error | $\delta(H)$ | $\delta(\text{vel})$ | Fall rate |
 |---|---|---|---|---|---|
 | Baseline ZOH | 1.000 | 1.000 | 0.00 | 0.00 | 0.00 |
 | Linear interpolation | 0.956 | 1.048 | −0.31 | 0.13 | 0.00 |
-| Butterworth 5 Hz | 1.098 | 2.594 | −0.04 | 1.00 | 0.23 |
-| Butterworth 8 Hz | 0.946 | 1.444 | −0.28 | 0.93 | 0.00 |
-| Butterworth 12 Hz | 0.935 | 1.160 | −0.28 | 0.52 | 0.00 |
-| Butterworth 12 Hz + linear | 0.942 | 1.284 | −0.26 | 0.75 | 0.00 |
-| Zero-phase via 40 ms delay | 1.082 | 2.493 | −0.03 | 1.00 | 0.07 |
-| Predictive filter | 0.915 | 1.279 | −0.33 | 0.71 | 0.00 |
-| Predictive + per-joint gate | 0.940 | 1.157 | −0.33 | 0.50 | 0.00 |
-| Predictive, policy unaware | 0.927 | 1.236 | −0.33 | 0.64 | 0.00 |
+| Butterworth (5 Hz) | 1.098 | 2.594 | −0.04 | 1.00 | **0.23** |
+| Butterworth (8 Hz) | 0.946 | 1.444 | −0.28 | 0.93 | 0.00 |
+| Butterworth (12 Hz) | 0.935 | 1.160 | −0.28 | 0.52 | 0.00 |
+| Butterworth (12 Hz) + linear | 0.942 | 1.284 | −0.26 | 0.75 | 0.00 |
+| Zero-phase via 40 ms delay | **1.082** | 2.493 | −0.03 | 1.00 | **0.07** |
+| Predictive filter | **0.915** | 1.279 | −0.33 | 0.71 | 0.00 |
+| Predictive + joint gate | 0.940 | 1.157 | −0.33 | 0.50 | 0.00 |
+| Predictive (policy-unaware) | 0.927 | 1.236 | −0.33 | 0.64 | 0.00 |
 
-*Table 6: Full-body closed-loop locomotion performance ($n = 30$ per scheme). Cliff's $\delta$ is reported against ZOH. In repeated runs of the full matrix, aggressive schemes fell between 7% and 30% of the time, while other schemes recorded no falls.*
+*Table 6: Full-body closed-loop locomotion performance ($n = 30$ per scheme, E3). Cliff's $\delta$ is
+reported against ZOH.*
 
-![closed loop](pic/e4-closed-loop.png)
+![Fig. 9 — closed loop, full-reward policy](pic/e4-closed-loop.png)
 
-The predictive filter reduces total heat by 8.5% (Cliff's $\delta = -0.33$). Against the 18.1% reachable
-budget, this represents a 47% recovery ratio. Linear interpolation, the intervention the zero-order hold
-most obviously invites, removes 4.4% ($H/H_{	ext{ZOH}} = 0.956$) and is not worth doing.
+The predictive filter achieves an 8.5% total thermal reduction (Cliff's $\delta = -0.33$),
+representing a 47% recovery of the 18.1% reachable budget. In contrast, linear interpolation recovers
+only 4.4% of total heat.
 
-Tracking the > 25 Hz discretization term shows that reducing ZOH staircase harmonics does not drive thermal savings:
-
-| Scheme | > 25 Hz Term (Absolute) | Total $H/H_0$ |
+| Scheme | > 25 Hz term (absolute) | Total $\mathcal{H}/\mathcal{H}_0$ |
 |---|---|---|
 | Baseline ZOH | 4.02 | 1.000 |
-| Butterworth 5 Hz | 1.96 | 1.098 |
-| Zero-phase via 40 ms delay | 2.34 | 1.082 |
-| Butterworth 12 Hz | 2.93 | 0.935 |
-| Predictive filter | 4.02 | 0.915 |
+| Butterworth (5 Hz) | **1.96** | **1.098** |
+| Zero-phase via 40 ms delay | **2.34** | **1.082** |
+| Butterworth (12 Hz) | 2.93 | 0.935 |
+| Predictive filter | 4.02 | **0.915** |
 
-*Table 7: Actuator dissipation above Nyquist versus total thermal load.*
+*Table 7: Actuator dissipation above Nyquist compared to total thermal load.*
 
-Schemes that halve the staircase term exhibit the highest total dissipation, while the predictive filter achieves the lowest total dissipation while leaving the staircase term unchanged.
+Filtering the ZOH staircase harmonics does not drive overall thermal recovery. Schemes that halve the
+> 25 Hz term generate higher net thermal dissipation, whereas the predictive filter leaves staircase
+harmonics untouched and attains the lowest total heat.
 
-In closed-loop trials, delaying commands by 40 ms to achieve zero phase increases thermal load by 8.2%
-($H/H_0 = 1.082$) and induces falls in 7% of episodes overall. Breaking down performance across commanded forward velocities:
-
-| Scheme | 0.5 m/s ($H/H_0$, Fall) | 1.0 m/s ($H/H_0$, Fall) | 0.3 m/s + turn ($H/H_0$, Fall) |
+| Scheme | 0.5 m/s | 1.0 m/s | 0.3 m/s + turn |
 |---|---|---|---|
-| Zero-phase via delay | 0.883, 0.00 | 1.258, 0.20 | 0.992, 0.00 |
-| Butterworth 5 Hz | 0.880, 0.00 | 1.295, 0.70 | 0.991, 0.00 |
-| Predictive + gate | 0.952, 0.00 | 0.924, 0.00 | 0.956, 0.00 |
-| Predictive + gate (tracking) | 1.298 | 0.995 | 1.250 |
+| Zero-phase via delay | 0.883 (falls: 0.00) | **1.258 (falls: 0.20)** | 0.992 (falls: 0.00) |
+| Butterworth (5 Hz) | 0.880 (falls: 0.00) | **1.295 (falls: 0.70)** | 0.991 (falls: 0.00) |
+| Predictive + gate | 0.952 (falls: 0.00) | 0.924 (falls: 0.00) | 0.956 (falls: 0.00) |
+| Predictive + gate, tracking | 1.298 | 0.995 | 1.250 |
 
-*Table 8: Velocity-dependent performance and failure rates.*
+*Table 8: Velocity-dependent performance and failure rates, $\mathcal{H}/\mathcal{H}_0$ and fall rate
+(E3).*
 
-At 0.5 m/s, the delayed filter reduces heat by 12% without falls. At 1.0 m/s, it falls in 20% of episodes, while the 5 Hz Butterworth falls in 70% of episodes, increasing heat proxy values by 26% to 30% above baseline.
+![Fig. 10 — latency backfires, and only at speed](fig/fig4-latency-backfire.svg)
 
-Gating the predictive filter by joint load costs 2.5 percentage points of heat reduction (from 8.5% to 6.0%) while recovering tracking accuracy; at 1.0 m/s, it reduces heat by 7.5% while tracking slightly better than baseline ZOH (0.995 tracking ratio). Passing filtered versus raw actions to the observation buffer yields minimal difference (0.915 vs. 0.927
-heat, 1.279 vs. 1.236 tracking; Table 6).
+The delayed zero-phase filter succeeds at 0.5 m/s, with a 12% heat reduction and zero falls, but
+destabilizes at 1.0 m/s, with a 20% fall rate and a 25.8% heat increase. Similarly, the 5 Hz
+Butterworth induces falls in 70% of episodes at 1.0 m/s. Gating the predictive filter by joint load
+costs 2.5 percentage points of thermal relief but maintains tracking fidelity at 0.995 of baseline at
+1.0 m/s without falls.
 
-### 5.6 Invariant Recovery Ratio on Unregularized Policies
+### 5.6 Invariant recovery ratio on unregularized policies
 
-We repeated the closed-loop matrix on a policy trained without effort and energy penalties:
+Evaluating the closed-loop pipeline on an unregularized policy, trained without torque or energy
+penalties, demonstrates consistent budget recovery.
 
-| Metric | Full Reward Policy | No Effort Terms Policy |
+| Metric | Full reward baseline | No effort terms |
 |---|---|---|
-| Baseline ZOH heat | 255.9 | 376.3 (+47%) |
-| Band split: DC / Gait / 5–25 Hz / > 25 Hz | 31.3 / 50.6 / 16.5 / 1.6% | 27.0 / 29.7 / 40.7 / 2.6% |
-| Filter-reachable share | 18.1% | 43.3% |
+| Baseline ZOH heat | 255.9 | **376.3 (+47%)** |
+| Band split (DC / gait / 5–25 Hz / > 25 Hz) | 31.3 / 50.6 / 16.5 / 1.6% | 27.0 / 29.7 / 40.7 / 2.6% |
+| Filter-reachable share | **18.1%** | **43.3%** |
 | Command predictor $R^2$ (closed loop) | 0.609 | 0.402 |
-| Predictive filter heat ($H/H_0$) | 0.915 | 0.765 (−23.5%) |
-| Recovered / reachable ratio | 47% | 54% |
-| Predictive + gate heat ($H/H_0$) | 0.940 | 0.879 |
+| Predictive filter $\mathcal{H}/\mathcal{H}_0$ | 0.915 | **0.765** |
+| Recovered / reachable fraction | **47%** | **54%** |
+| Predictive + gate $\mathcal{H}/\mathcal{H}_0$ | 0.940 | 0.879 |
 | Predictive + gate tracking error | 1.157 | 1.149 |
-| Zero-phase via delay heat ($H/H_0$) | 1.082 | 1.053 |
-| Zero-phase via delay fall rate | 0.07 | 0.37 |
+| Zero-phase via delay $\mathcal{H}/\mathcal{H}_0$ | 1.082 | 1.053 |
+| Zero-phase via delay fall rate | 0.07 | **0.37** |
 
-*Table 9: Comparison between fully regularized and effort-ablated policies.*
+*Table 9: Performance comparison between regularized and effort-ablated policies (E3, E5). The
+predictor $R^2$ row is the closed-loop fit; the open-loop fit of §5.3 is a different quantity
+(Appendix B, ruling B1).*
 
-![second policy](pic/e4-closed-loop-no-torques-energy.png)
+![Fig. 11 — closed loop, effort terms removed](pic/e4-closed-loop-no-torques-energy.png)
 
-Omitting effort terms shifts 25 percentage points of heat into the filter-reachable band (increasing from 18.1% to 43.3%) and inflates total dissipation by 47%. The predictive filter recovers 47% and 54% of the reachable budget across the two policies, respectively, confirming that the recovery ratio remains stable despite a three-fold difference in raw heat savings (8.5% vs. 23.5%).
-
-Although closed-loop command predictability falls from $R^2 = 0.609$ to 0.402, recovery efficacy is not
-constrained by predictor accuracy. On the unregularized policy, gating reduces heat by 12.1% for a 15% tracking penalty, compared to the ungated filter's 23.5% heat reduction for a 59% tracking penalty. Delayed filtering fails catastrophically, falling in 37% of episodes overall and in every episode (100%) at 1.0 m/s.
+Removing effort terms inflates baseline dissipation by 47% and increases the reachable budget from
+18.1% to 43.3%. The predictive filter recovers 47% and 54% of this reachable pool across the two
+policies, respectively. While raw thermal savings differ by nearly 3×, 8.5% against 23.5%, the recovery
+ratio remains invariant.
 
 ---
 
-## 6. Discussion and Practical Guidance
+## 6. Practical Engineering Guidelines
 
-- **Profile the spectral split before intervention.** A single baseline rollout establishes the reachable budget. Halving this budget accurately estimates attainable closed-loop recovery. If the reachable share is minor, command filtering cannot prevent thermal overload.
-- **Do not eliminate phase lag via delay.** Filter latency degrades policy feedback stability margins, precipitating falls at higher velocities. Filtering architectures must be evaluated at maximum commanded speeds.
-- **Deploy load-dependent gating.** Filtering should be restricted to joints operating below the crossover threshold $\bar{\tau} \approx \sqrt{\mathrm{Var}(\tau)}$. On the Go1, gating preserved stability while recovering majority tracking fidelity.
-- **Prioritize effort regularization over `action_rate`.** Reward formulations targeting thermal safety should penalize joint torque and energy rather than discrete action differences.
+- **Profile spectral splits before intervening.** A single baseline rollout establishes the reachable
+  budget. Halving this reachable share provides an accurate a priori estimate of closed-loop thermal
+  recovery without modifying low-level code. If the reachable fraction is small, efforts must target
+  kinematic posture or reward formulations rather than filtering.
+- **Avoid delayed zero-phase smoothing.** Smoothing latency directly erodes feedback phase margin.
+  Candidate smoothing architectures must be validated at maximum commanded velocities, where
+  latency-induced falls manifest.
+- **Deploy load-dependent gating.** Restrict command smoothing to joints operating below
+  $\bar{\tau} \approx \sqrt{\mathrm{Var}(\tau)}$. This preserves tracking fidelity on stance joints
+  while eliminating jitter on unloaded joints.
+- **Prioritize effort regularization over action rate.** Reward terms penalizing joint torque and power
+  dictate 89% of transient thermal load, compared to 8% governed by discrete finite-difference
+  `action_rate` penalties.
 
 ---
 
 ## 7. Related Work
 
-**Thermal-Aware Locomotion.** Recent methods incorporate motor temperature observations and thermal reward bounds,[2] or train residual policies conditioned on thermal states.[3] Contact-constrained inverse kinematics has similarly addressed multi-limbed humanoid thermal redistribution.[9] These approaches require retraining; our work characterizes post-hoc interventions for frozen policy checkpoints.
+**Thermal-aware locomotion.** Recent frameworks integrate motor temperature observations and thermal
+reward boundaries,[2] train thermal residual policies,[3] or employ contact-constrained inverse
+kinematics for multi-limbed humanoid thermal balancing.[9] These approaches require complete
+retraining, whereas this work establishes post-hoc interventions on frozen policies.
 
-**Actuation Interfaces.** Classical architectures include Actuator Reality Shaping via two-degree-of-freedom tracking controllers,[10] high-frequency linear feedback for torque interpolation,[11] voltage-realizable acceleration bounding,[12] action chunk optimization,[13] B-spline policy representations,[14] and forward delay compensation networks.[15] Our analysis addresses the thermal loss consequences of these interfaces.
+**Actuation interfaces.** Interfaces designed to bridge high-level commands and motor drives include
+reality shaping via two-degree-of-freedom tracking controllers,[10] high-frequency torque
+interpolation,[11] voltage-realizable acceleration bounds,[12] action chunk post-optimization,[13]
+B-spline policy representations,[14] and forward delay compensation networks.[15] We characterize the
+energetic dissipation consequences of these interfaces.
 
-**Smoothness Regularization.** Methods such as CAPS,[5] Lipschitz-constrained networks,[16] and spectral normalization[17] suppress high-frequency oscillations; a benchmark study reports improved control smoothness at small performance cost.[18] However, prior studies do not measure physical electrical dissipation or isolate steady holding torque from command ripple on legged systems.
+**Smoothness regularization.** Methods such as CAPS,[5] Lipschitz-constrained architectures,[16] and
+spectral normalization[17] suppress command oscillations during training, and a benchmark study reports
+improved control smoothness at small performance cost.[18] However, these studies do not isolate
+physical copper loss from steady-state posture loads.
 
-**Control Rate and Discretization.** Robust locomotion has been demonstrated at 8 Hz on ANYmal C, with low-rate policies shown to be less sensitive to actuation latency;[19] Q-learning is known to degenerate as the time step shrinks;[20] and policies that choose their own action durations reduce average control frequency without losing reward.[21] None of this literature reports a thermal or electrical quantity as a function of control rate.
+**Control discretization.** Low-frequency execution has demonstrated robustness on ANYmal C at
+8 Hz,[19] Q-learning is known to degenerate as the time step shrinks,[20] and adaptive action-duration
+frameworks reduce average control frequency.[21] None of these works map electrical dissipation as an
+explicit function of control rate.
 
 ---
 
-## 8. Limitations
+## 8. Limitations and Future Work
 
-All experiments are conducted in rigid-body simulation using mean squared torque $\mathbb{E}[\tau^2]$ as an electrical loss proxy under constant $K_t$, omitting iron losses, inverter switching dissipation, and winding thermal diffusion. Single-joint sweeps omit contact dynamics. Experiments are restricted to a single quadruped platform on flat terrain. The 5 Hz gait split is an empirical parameter based on the 2 Hz stride fundamental. Finally, reward ablations are evaluated on single seeds over 8-second intervals.
+This study relies on rigid-body simulation using squared torque as a proxy for electrical winding loss
+under constant torque sensitivity $K_t$. Stator iron core losses, inverter switching dynamics, and
+winding thermal diffusion are omitted. Single-joint analytical sweeps omit ground impact dynamics.
+Evaluations are conducted on flat terrain using a single quadruped morphology, the Unitree Go1. The
+5 Hz gait split is a hand-chosen parameter and has not been swept, and the reward ablations of §5.2 are
+single-seed over 8 s intervals with no confidence intervals reported (`pending`, Appendix C). Extending
+four-band spectral decomposition to humanoid platforms such as the Unitree G1, and validating the
+3.2 N·m crossover on physical dynamometer testbenches, represent essential future directions.
 
 ---
 
 ## 9. Conclusion
 
-Actuator overheating in learned legged locomotion decomposes into steady posture torque and dynamic command ripple. Because these components combine in quadrature, command filtering provides meaningful thermal relief only on lightly loaded joints operating below the load crossover threshold. In closed loop, phase lag introduced by smoothing compromises feedback stability at speed, demonstrating that causal predictive filtering with load-dependent gating is required to safely recover actuator thermal margins.
+Actuator thermal overload in learned legged locomotion decomposes into steady-state posture torque and
+dynamic command ripple. Because these components add in quadrature, command filtering provides thermal
+relief only on lightly loaded joints operating below the analytical crossover. In closed-loop
+execution, filter phase lag directly degrades stability margins at operating speeds. Consequently,
+causal predictive filtering with load-dependent gating provides a reliable framework to recover
+actuator thermal margins on frozen checkpoints without retraining.
 
 ---
 
 ## References
 
+Entries [1]–[21] are cited above. The full verified 60-entry bibliography is in `references-60.md`;
+entries [22]–[60] are not yet placed in the text (Appendix C). Entries [61]–[63] were added to retire
+the internal repository document that [6] used to be.
+
 [1] NVIDIA Research, "Ankle roll motors overheating on G1," GR00T-WholeBodyControl, GitHub issue #174, 2026. Available: https://github.com/NVlabs/GR00T-WholeBodyControl/issues/174
 
 [2] *authors pending*, "Learning thermal-aware locomotion policies for an electrically-actuated quadruped robot," arXiv:2603.01631, 2026.
 
-[3] Y. Wan et al., "Learning to balance motor thermal safety and quadrupedal locomotion performance with residual policy," arXiv:2605.27046, 2026.
+[3] Y. Wan, W. Lin, L. Qian, Y. Zou, W. Wu, S. Liao, C. Zhao, and X. Luo, "Learning to balance motor thermal safety and quadrupedal locomotion performance with residual policy," arXiv:2605.27046, 2026.
 
 [4] T. Matsuzawa, K. Irie, T. Yoshida, T. Suzuki, Y. Hara, and M. Tomono, "Long-distance real-world navigation of the legged-wheeled robot Go2-W using deep reinforcement learning," arXiv:2606.21387, 2026.
 
-[5] S. Mysore, B. Mabsout, R. Mancuso, and K. Saenko, "Regularizing action policies for smooth control with reinforcement learning," in *Proc. ICRA*, 2021.
+[5] S. Mysore, B. Mabsout, R. Mancuso, and K. Saenko, "Regularizing action policies for smooth control with reinforcement learning," in *Proc. ICRA*, 2021. arXiv:2012.06644.
 
 [6] Unitree Robotics, "GO-M8010-6 motor data user manual," V1.0, 2023. Available:
 https://techshare.co.jp/faq/wp-content/uploads/2023/12/GO-M8010-6_Motor_Data_User_Manual_V1.0.pdf
 — the datasheet field is *communication control frequency*, 6000 Hz; it is not labelled a current-loop rate.
+
+[7] maxon motor ag, "EC max 30 Ø30 mm, brushless, 60 W," datasheet, 2024.
+
+[8] K. Urs, C. E. Adu, E. J. Rouse, and T. Y. Moore, "Design and characterization of 3D printed, open-source actuators for legged locomotion," in *Proc. IROS*, 2022. arXiv:2202.12395.
+
+[9] S. J. Jorgensen, J. Holley, F. Mathis, J. S. Mehling, and L. Sentis, "Thermal recovery of multi-limbed robots with electric actuators," *IEEE Robotics and Automation Letters*, vol. 4, no. 2, pp. 1077–1084, 2019. arXiv:1902.00187.
+
+[10] S. Yamamori et al., "Actuator reality shaping for zero-shot sim-to-real robot learning," arXiv:2607.02205, 2026.
+
+[11] R. Kourdis, M. Stępień, J. Manhes, N. Mansard, S. Tonneau, P. Souères, and T. Flayols, "Very high frequency interpolation for direct torque control," arXiv:2509.24175, 2025.
+
+[12] L. Zhang, J. Wang, T. Zhang, Z. Song, X. Zeng, W. Xia, Z. Li, and Y. Liu, "VRA: Grounding discrete-time joint acceleration in voltage-constrained actuation," in *Proc. RSS*, 2026. arXiv:2605.10696.
+
+[13] D. Son and S. Park, "LiPo: A lightweight post-optimization framework for smoothing action chunks generated by learned policies," arXiv:2506.05165, 2025.
+
+[14] X. Han, H. Xiong, H. Chen, C. Liu, A. Torralba, Y. Zhu, and Y. Du, "B-spline policy: Accelerating manipulation policies via B-spline action representations," arXiv:2607.09648, 2026.
+
+[15] J. C. Weddington, B. P. Ölveczky, and S. A. Baccus, "Reinforcement learning on cost-constrained quadrupedal hardware," arXiv:2607.26434, 2026.
+
+[16] Z. Chen, X. He, Y.-J. Wang, Q. Liao, Y. Ze, Z. Li, S. S. Sastry, J. Wu, K. Sreenath, S. Gupta, and X. B. Peng, "Learning smooth humanoid locomotion through Lipschitz-constrained policies," in *Proc. IROS*, 2025. arXiv:2410.11825.
+
+[17] J. Shin, W. Cha, D. Kim, J. Cha, and J. Park, "Spectral normalization for Lipschitz-constrained policies on learning humanoid locomotion," arXiv:2504.08246, 2025.
+
+[18] G. Christmann, Y. Luo, H. Mandala, and W. Chen, "Benchmarking smoothness and reducing high-frequency oscillations in continuous control policies," in *Proc. IROS*, 2024.
+
+[19] S. Gangapurwala, L. Campanaro, and I. Havoutis, "Learning low-frequency motion control for robust and dynamic robot locomotion," in *Proc. ICRA*, 2023.
+
+[20] C. Tallec, L. Blier, and Y. Ollivier, "Making deep Q-learning methods robust to time discretization," in *Proc. ICML*, 2019.
+
+[21] A. Sukhija, L. Treven, J. Cheng, F. Dörfler, S. Coros, and A. Krause, "TARC: Time-adaptive robotic control," arXiv:2510.23176, 2025.
 
 [61] DEEP Robotics, "J60 joint," product page, 2024. Available: https://www.deeprobotics.cn/en/wap/j60.html
 — states a communication control frequency of 1 kHz.
@@ -342,47 +573,24 @@ https://github.com/unitreerobotics/unitree_legged_sdk/blob/master/example_py/exa
 https://www.deeprobotics.us/news/physical-ai-101-the-ultimate-guide-to-mastering-reinforcement-learning-with-the-deep-robotics-lite3/
 — states a 1 kHz real-time control loop. Does not state a policy rate.
 
-[7] maxon motor ag, "EC max 30 Ø30 mm, brushless, 60 W," datasheet, 2024.
-
-[8] K. Urs, C. E. Adu, E. J. Rouse, and T. Y. Moore, "Design and characterization of 3D printed, open-source actuators for legged locomotion," arXiv:2202.12395, 2022.
-
-[9] S. J. Jorgensen, J. Holley, F. Mathis, J. S. Mehling, and L. Sentis, "Thermal recovery of multi-limbed robots with electric actuators," *IEEE Robotics and Automation Letters*, vol. 4, no. 2, pp. 1077–1084, 2019. arXiv:1902.00187.
-
-[10] S. Yamamori et al., "Actuator reality shaping for zero-shot sim-to-real robot learning," arXiv:2607.02205, 2026.
-
-[11] R. Kourdis et al., "Very high frequency interpolation for direct torque control," arXiv:2509.24175, 2025.
-
-[12] L. Zhang et al., "VRA: Grounding discrete-time joint acceleration in voltage-constrained actuation," in *Proc. RSS*, 2026.
-
-[13] D. Son and S. Park, "LiPo: A lightweight post-optimization framework for smoothing action chunks generated by learned policies," arXiv:2506.05165, 2025.
-
-[14] X. Han et al., "B-spline policy: Accelerating manipulation policies via B-spline action representations," arXiv:2607.09648, 2026.
-
-[15] J. C. Weddington et al., "Reinforcement learning on cost-constrained quadrupedal hardware," arXiv:2607.26434, 2026.
-
-[16] Z. Chen et al., "Learning smooth humanoid locomotion through Lipschitz-constrained policies," arXiv:2410.11825, 2024.
-
-[17] J. Shin, W. Cha, D. Kim, J. Cha, and J. Park, "Spectral normalization for Lipschitz-constrained policies on learning humanoid locomotion," arXiv:2504.08246, 2025.
-
-[18] G. Christmann, Y. Luo, H. Mandala, and W. Chen, "Benchmarking smoothness and reducing high-frequency oscillations in continuous control policies," in *Proc. IROS*, 2024.
-
-[19] S. Gangapurwala, L. Campanaro, and I. Havoutis, "Learning low-frequency motion control for robust and dynamic robot locomotion," in *Proc. ICRA*, 2023.
-
-[20] C. Tallec, L. Blier, and Y. Ollivier, "Making deep Q-learning methods robust to time discretization," in *Proc. ICML*, 2019.
-
-[21] A. Sukhija, L. Treven, J. Cheng, F. Dörfler, S. Coros, and A. Krause, "TARC: Time-adaptive robotic control," arXiv:2510.23176, 2025.
-
 ---
 
 ## Appendix A. Planned additions (not yet run)
 
-**A.1 Gait-split sensitivity sweep.** $f_g = 5$ Hz is currently hand-chosen. Sweep 3–8 Hz and plot the reachable share, to show the core conclusions hold regardless of the exact split.
+Every item below is `pending`; none of it is reported anywhere in this draft.
 
-**A.2 Multi-seed reward ablation.** §5.2 is single-seed, 8 s. Repeat over 5 seeds and report mean ± std.
+**A.1 Gait-split sensitivity sweep.** $f_g = 5$ Hz is hand-chosen. Sweep 3–8 Hz and plot the reachable
+share, to show the core conclusions hold regardless of the exact split.
 
-**A.3 G1 humanoid verification.** Run the same four-band decomposition on a G1 standing and walking, to support the cross-morphology claim the introduction leans on.
+**A.2 Multi-seed reward ablation.** §5.2 is single-seed, 8 s. Repeat over 5 seeds and report
+mean ± std.
 
-**A.4 Single-joint hardware bench.** One motor, a torque load, a current probe: verify the 3.2 N·m crossover under injected out-of-band command power.
+**A.3 G1 humanoid verification.** Run the same four-band decomposition on a G1 standing and walking, to
+support the cross-morphology claim the introduction leans on.
+
+**A.4 Single-joint hardware bench.** One motor, a torque load, a current probe: verify the 3.2 N·m
+crossover under injected out-of-band command power.
+
 ---
 
 ## Appendix B. Numeric reconciliation
@@ -396,38 +604,38 @@ elsewhere in v1 and the prose value is not. Line references are to v1.
 |---|---|---|
 | B1 | Predictor $R^2$ is **two quantities, not one contradiction**. Open-loop replay (E2): 0.679 / 0.385 / 0.059. Closed loop (E3, E5): 0.609 / 0.402. | v1:347 reports the first inside §5.3; v1:491 reports the second in the §5.6 table, corroborated at v1:573. Both retained and labelled. |
 | B2 | Zero-phase-via-delay overall fall rate is **0.07**. The 13% figure is dropped. | v1:406 table gives 0.07; the v1 per-velocity breakdown 0.00 / 0.20 / 0.00 averages to 0.067. The 13% at v1:447 is supported by no table. |
-| B3 | Zero-phase-via-delay heat increase is **8.2%** ($H/H_0 = 1.082$). The 8.5% figure is dropped. | v1:406. The 8.5% at v1:447 collides with the predictive filter's 8.5% *reduction*, which the 47% recovery ratio is built on. |
+| B3 | Zero-phase-via-delay heat increase is **8.2%** ($\mathcal{H}/\mathcal{H}_0 = 1.082$). The 8.5% figure is dropped. | v1:406. The 8.5% at v1:447 collides with the predictive filter's 8.5% *reduction*, which the 47% recovery ratio is built on. |
 | B4 | Predictive filter, policy-aware: **0.915** heat, **1.279** tracking. Policy-unaware: **0.927** heat, **1.236** tracking. | v1:407 and v1:409. The prose values at v1:477 (0.917 / 1.249 / 1.214) are dropped; 0.915 is what 8.5% and 47% derive from throughout. |
 | B5 | Seven ablated policies were trained; five are reported. **Not a contradiction.** | v1:222 and v1:301 both say seven; v1's Table 2 lists five rows, as does this draft. The two unreported variants are `pending`. |
-| B6 | Linear interpolation removes **4.4%** of heat in *closed* loop, and the claim belongs to Table 6. | v1:401 gives $H/H_{\text{ZOH}} = 0.956$. The claim was previously attached to Table 7, which has no linear-interpolation row. |
+| B6 | Linear interpolation removes **4.4%** of heat in *closed* loop, and the claim belongs to Table 6. | v1:401 gives $\mathcal{H}/\mathcal{H}_{\text{ZOH}} = 0.956$. An earlier draft attached the claim to Table 7, which has no linear-interpolation row. |
 | B7 | **There is no protocol E4.** The label was never assigned. | v1 defines E1 (v1:213), E2 (v1:222), E3 (v1:229) and E5 (v1:240) only. Figure filenames `e3-` and `e4-` follow a third, informal numbering and are left as-is. |
-| B8 | $\rho$ and $\rho_{>5\,\mathrm{Hz}}$ are **different cuts** and are labelled distinctly throughout. | §3 defines $\rho$ against the $-3$ dB bandwidth of 15.3 Hz; Table 2's column is the coarser 5 Hz cut. Both appear in v1; neither is wrong. |
+| B8 | $\rho$ and $\rho_{>5\,\mathrm{Hz}}$ are **different cuts** and are labelled distinctly throughout. | §3.2 defines $\rho$ against the $-3$ dB bandwidth of 15.3 Hz; Table 2's column is the coarser 5 Hz cut. Both appear in v1; neither is wrong. |
 
 ---
 
 ## Appendix C. Pending values
 
-Quantities that exist in neither draft. Each is printed as `pending` at its point of use rather than
-estimated.
+Quantities that exist in no draft, or that the text asserts without a source. Each is flagged at its
+point of use rather than estimated.
 
 | Item | Where it appears | What closes it |
 |---|---|---|
 | Author, affiliation, contact | Title block of the reading page | Author decision. |
-| Reference [2] author list | References | The arXiv:2603.01631 abstract page. The four-name list previously printed could not be confirmed by any search and has been removed rather than reprinted. |
+| Reference [2] author list | References | The arXiv:2603.01631 abstract page. An earlier draft carried a four-name list that no search could confirm; it has been removed rather than reprinted. |
+| **Source for the 83 Hz Lite3 policy rate** | §2 | **No public source states it.** The only published Lite3 policy rate found is roughly 50 Hz, which contradicts it; 83 Hz is reconstructable as 1000/12, which is an inference rather than a citable fact. The 1 kHz state loop is separately sourced [63]. Either a first-hand deployment measurement, or removal of the figure. |
 | Statistics for two of the seven ablation variants | §5.2, Table 2 | The ablation run logs. |
-| Confidence intervals and seed counts | §5.2, §8 | Appendix A.2. §5.2 is single-seed over 8 s; no interval is reported anywhere in either draft. |
-| Gait-split sensitivity | §3, Appendix A.1 | Sweeping $f_g$ over 3–8 Hz. |
+| Confidence intervals and seed counts | §5.2, §8 | Appendix A.2. §5.2 is single-seed over 8 s; no interval is reported anywhere in any draft. |
+| Gait-split sensitivity | §3.1, §8, Appendix A.1 | Sweeping $f_g$ over 3–8 Hz. |
 | G1 humanoid band decomposition | §1, §8, Appendix A.3 | Running E5 on a G1. The cross-morphology claim rests on it. |
 | Hardware confirmation of the 3.2 N·m crossover | §5.1, §8, Appendix A.4 | One motor, a torque load and a current probe. |
 | Text placement for references [22]–[60] | References | 39 of the 60 verified entries are not yet cited anywhere in the prose, which only reaches [21]. Either cite them or cut them before submission. |
-| DeepRobotics Lite3 policy rate | §2 | An earlier draft claimed ~83 Hz. No public source states it; the only published figure found is ~50 Hz, which contradicts it. Withdrawn pending first-hand deployment data. |
-| Regeneration of `command-spectrum.png` from source rollouts | §5.2 | The source rollouts are not in this repository. `figsrc/annotate_command_spectrum.py` adds a band ruler that distinguishes the 15.3 Hz shading from the 5–25 Hz claim without touching a data pixel, but the panel itself has not been re-plotted. |
+| Regeneration of `command-spectrum.png` from source rollouts | §5.2, Fig. 5 | The source rollouts are not in this repository. `figsrc/annotate_command_spectrum.py` adds a band ruler that distinguishes the 15.3 Hz shading from the 5–25 Hz claim without touching a data pixel, but the panel itself has not been re-plotted. |
 
 **Reference [6] retired.** It was `docs/legged-rl-control-stack-reference.md`, an internal repository
 file, which cannot be a citation in a submitted paper. It is replaced by three public vendor sources,
 [6], [61] and [62], plus [63] for the Lite3 loop rate. One caveat survives: the 6 kHz figure is the
-datasheet's *communication control frequency*, which is not the same thing as a current-loop rate, and
-the text now says so.
+datasheet's *communication control frequency*, which is not the same thing as a commutation or
+current-loop rate, and §2 currently describes it as a commutation loop.
 
 ---
 
@@ -436,12 +644,14 @@ the text now says so.
 | File | What it is |
 |---|---|
 | `references-60.md` | 60-entry verified bibliography + per-entry annotation and section mapping |
-| `references-60.html` | The same list, as the reading page's reference block |
-| `figsrc/fig1_architecture.py` | System architecture: policy → filter → ZOH → PD → motor, with the feedback loop and torque tap |
-| `figsrc/fig2_crossover.py` | Quadrature crossover at 3.2 N·m with the Go1 joint families placed |
-| `figsrc/fig3_band_budget.py` | Four-band heat budget, both policies |
-| `figsrc/fig4_latency.py` | Closed-loop latency failure across the three commanded velocities |
-| `fig/*.svg` | Output of the four scripts above. English only, light background. Regenerate by rerunning them. |
-| `pic/*.png` | Original experiment plots. Not regenerated. |
+| `references-60.html` | The reading page's reference block, 63 entries |
+| `figsrc/fig1_architecture.py` | Fig. 1 — policy → filter → ZOH → PD → motor, with the feedback loop and torque tap |
+| `figsrc/fig5_three_filters.py` | Fig. 2 — three smoothing kernels on one time axis |
+| `figsrc/fig2_crossover.py` | Fig. 4 — quadrature crossover at 3.2 N·m with the Go1 joint families placed |
+| `figsrc/fig3_band_budget.py` | Fig. 8 — four-band heat budget, both policies |
+| `figsrc/fig4_latency.py` | Fig. 10 — closed-loop latency failure across the three commanded velocities |
+| `figsrc/annotate_command_spectrum.py` | Fig. 5 — adds the band ruler to `pic/command-spectrum.png` without touching a data pixel |
+| `fig/*.svg` | Output of the scripts above. English only, light background. Regenerate by rerunning them. |
+| `pic/*.png`, `pic/*.gif` | Original experiment plots and the phase-lag animation. Not regenerated. |
 | `paper-comic-plan.md` | paper-comic Steps 1–4; Step 5 blocked, no image-generation backend installed |
 | `paper-page.html.tmpl` + `build_page.py` | Reading page, typeset as a paper, light-only. Build with `python build_page.py` |
