@@ -397,8 +397,8 @@ reachable shares are measured.}
 \subsection{Effort Terms Govern Jitter; Action Rate Does Not}
 
 Command-side statistics were evaluated across ablated Go1 policy checkpoints
-(five seeds per variant, 8\,s rollouts). Of the seven variants trained,
-Table~\ref{tab:ablation} reports the five most representative.
+(five seeds per variant, 8\,s rollouts). All seven variants are reported in
+Table~\ref{tab:ablation}.
 
 \begin{table}[!tb]
 \caption{Command-side thermal statistics across reward ablations (E2), five
@@ -529,7 +529,7 @@ The ZOH staircase---the explicit focus of interpolation literature---accounts fo
 only 1.6\% of motor dissipation. Discretionary thermal waste resides primarily
 between 5 and 25\,Hz. As predicted by the crossover, the reachable budget scales
 inversely with joint holding load\ifshowJointTable (Table~\ref{tab:joints})\fi: lightly loaded hip
-actuators reach 33--45\%, while weight-bearing calf actuators remain confined to
+actuators reach 32--45\%, while weight-bearing calf actuators remain confined to
 14--17\%.
 
 \ifshowJointTable  % off: loses per-joint-family reachable shares, which the abstract quotes
@@ -545,7 +545,7 @@ sum of the 5--25\,Hz and $>25$\,Hz columns.}
 Joint & $|\bar{\tau}|$ & DC & Gait & 5--25 & $>25$ & Reach. \\
 family & ($\mathrm{N}\!\cdot\!\mathrm{m}$) & & & Hz & Hz & \\
 \midrule
-Hips    & 1.2--1.5 & 7--21\%  & 47--54\% & 33--45\% & 0.3--0.4\% & \textbf{33--45\%} \\
+Hips    & 1.2--1.5 & 7--21\%  & 47--54\% & 32--45\% & 0.3--0.4\% & \textbf{32--45\%} \\
 Thighs  & 2.0--2.6 & 2--19\%  & 56--78\% & 16--29\% & 3.0--4.0\% & \textbf{20--32\%} \\
 Calves  & 5.9--6.9 & 32--38\% & 45--54\% & 13--16\% & 1.1--1.6\% & \textbf{14--17\%} \\
 \bottomrule
