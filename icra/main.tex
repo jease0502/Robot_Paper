@@ -154,8 +154,8 @@ harmonics contribute merely 1.6\% and establishing which joints are physically
 amenable to filtering.
 \item \textbf{Closed-loop latency failure boundary.} We quantify the divergence
 between open-loop replay, with up to 46\% apparent savings, and closed-loop
-execution, demonstrating that 40\,ms of filter latency induces up to a 100\% fall
-rate at operating speed (1.0\,m/s).
+execution, demonstrating that 40\,ms of filter latency induces a 20\% fall rate on
+a regularized policy at 1.0\,m/s, rising to 100\% on an unregularized one.
 \item \textbf{Retraining-free predictive gated filtering.} We propose an AR(8)
 predictive compensator paired with joint-load gating that eliminates phase lag,
 safely recovering 47--54\% of the reachable thermal budget across diverse
@@ -742,8 +742,9 @@ speed range, which is therefore where a candidate filter must be evaluated.
 \emph{Gate by load}: restrict smoothing to joints below $\bar{\tau} \approx
 \sqrt{\mathrm{Var}(\tau)}$, preserving tracking on stance joints while removing
 jitter from unloaded ones. \emph{Prefer effort regularization to
-\texttt{action\_rate}}: torque and energy penalties govern 89\% of the transient
-against 8\%. Impact-mitigation rewards~\cite{impactmit} and compliant
+\texttt{action\_rate}}: ablating the torque and energy penalties raises the step
+transient by $74\% \pm 23$, while ablating \texttt{action\_rate} produces no
+change we can measure. Impact-mitigation rewards~\cite{impactmit} and compliant
 feet~\cite{compliantfeet} reach the same budget from the reward and mechanical
 sides respectively.
 
