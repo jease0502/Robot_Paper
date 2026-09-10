@@ -1,5 +1,14 @@
 #!/usr/bin/env python3
-"""Assemble paper-page.html from the template, the hand-authored SVGs and the pic/ PNGs.
+"""Assemble the reading page from the template, the hand-authored SVGs and the pic/ PNGs.
+
+Two outputs from one template:
+
+  paper-page.html   body fragment, for the Artifact tool, which supplies its own
+                    <!doctype>/<head> wrapper at publish time. Gitignored.
+  index.html        standalone document, for GitHub Pages. Needs the doctype and
+                    the head the Artifact host would otherwise have provided --
+                    without them the page renders in quirks mode and has no
+                    viewport meta, so mobile layout breaks.
 
 SVGs are inlined so they inherit the page's theme colours; PNGs are embedded as
 data: URIs because the Artifact CSP blocks external images.
@@ -11,7 +20,27 @@ import sys
 
 ROOT = pathlib.Path(__file__).parent
 TMPL = ROOT / "paper-page.html.tmpl"
-OUT = ROOT / "paper-page.html"
+OUT_FRAGMENT = ROOT / "paper-page.html"
+OUT_STANDALONE = ROOT / "index.html"
+
+# Mirrors the wrapper the Artifact host injects, so the two outputs render alike.
+HEAD = """<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="robots" content="noindex, nofollow">
+<style>
+html{color-scheme:light dark}
+body{margin:0;font-family:ui-sans-serif,system-ui,sans-serif}
+img{max-width:100%}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+"""
+FOOT = "\n</body>\n</html>\n"
 
 
 def figure(body: str, label: str, caption: str) -> str:
@@ -103,6 +132,21 @@ FIGS = {
 }
 
 
+def standalone(fragment: str) -> str:
+    """Wrap the fragment as a full document, hoisting its title/link/style into <head>.
+
+    The template opens with <title>, the font <link> and the page <style>; those are
+    head content that the Artifact host tolerates inline. A real document should carry
+    them in <head>, so split at the first </style> and move that prologue up.
+    """
+    marker = "</style>"
+    idx = fragment.find(marker)
+    if idx == -1:
+        return HEAD + fragment + FOOT
+    head_bits, body = fragment[: idx + len(marker)], fragment[idx + len(marker) :]
+    return HEAD.replace("</head>", head_bits + "\n</head>") + body.lstrip("\n") + FOOT
+
+
 def main() -> int:
     html = TMPL.read_text(encoding="utf-8")
     for key, block in FIGS.items():
@@ -115,8 +159,11 @@ def main() -> int:
     if leftover:
         print(f"error: unsubstituted placeholders {leftover}", file=sys.stderr)
         return 1
-    OUT.write_text(html, encoding="utf-8")
-    print(f"wrote {OUT}  ({OUT.stat().st_size/1024:.0f} KB)")
+
+    OUT_FRAGMENT.write_text(html, encoding="utf-8")
+    OUT_STANDALONE.write_text(standalone(html), encoding="utf-8")
+    for p in (OUT_FRAGMENT, OUT_STANDALONE):
+        print(f"wrote {p.name:<20} ({p.stat().st_size/1024:.0f} KB)")
     return 0
 
 
