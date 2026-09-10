@@ -21,3 +21,7 @@ icra/*.fdb_latexmk
 icra/*.synctex.gz
 icra/build.log
 icra/main.pdf
+
+# scratch from the arXiv batch verification
+icra/_*.xml
+icra/_*.txt

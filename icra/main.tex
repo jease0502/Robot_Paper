@@ -80,112 +80,80 @@ Locomotion: Posture, Ripple, and Closed-Loop Filtering Limits}
 \thispagestyle{empty}
 
 \begin{abstract}
-Reinforcement learning (RL) locomotion policies frequently drive quadrupedal and
-humanoid actuators into thermal shutdown by continuously emitting high-rate
-position setpoints with high-frequency chattering that exceeds motor bandwidth.
-Mitigating this dissipation traditionally requires tedious reward re-tuning and
-policy retraining, while post-hoc command smoothing is commonly dismissed due to
-filter-induced phase lag that degrades feedback stability margins. In this paper,
-we demonstrate that command-side thermal dissipation can be effectively resolved
-post-hoc on frozen checkpoints without retraining. We show that electrical copper
-loss decomposes in quadrature into a steady-state posture term and a dynamic
-ripple term, revealing that their relative dominance is strictly dictated by
-joint-specific loading rather than by policy behavior. We identify this crossover
-analytically and empirically at $3.2\Nm$ on a Unitree Go1: load-bearing knee
-joints sit above this threshold and carry only 14--17\% of their heat in
-filter-reachable bands, whereas lightly loaded hip joints sit below it and carry
-33--45\%. A Parseval decomposition demonstrates that zero-order-hold staircase
-harmonics contribute merely 1.6\% of total heat, with discretionary losses
-concentrated in the 5--25\,Hz in-band jitter. While open-loop replay suggests a
-46\% thermal reduction via zero-phase filtering, this benefit collapses in closed
-loop: a 40\,ms smoothing latency induces falls in 20\% of episodes at 1.0\,m/s on
-a regularized policy and in 100\% on an unregularized one. To bypass this latency
-penalty, we introduce a causal order-8 predictive filter combined with joint-load
-gating. This plug-and-play architecture recovers 47\% and 54\% of the reachable
-thermal budget across regularized and unregularized policies without causing
-falls. Finally, we show that conventional \texttt{action\_rate} penalties fail to
-govern command-side heating (8\% transient increase when ablated), whereas direct
-effort and energy penalties dictate the accessible thermal budget (89\% increase).
+Reinforcement learning (RL) locomotion policies frequently drive legged actuators
+into thermal shutdown through high-frequency command chattering. Mitigating this
+heating conventionally requires tedious reward retuning, while post-hoc command
+filtering is widely avoided due to filter-induced phase lag that degrades
+closed-loop stability margins. In this paper, we show that command-side thermal
+dissipation can be safely resolved post-hoc on frozen checkpoints without
+retraining. We demonstrate that electrical copper loss decomposes in quadrature
+into a steady-state posture term and a dynamic ripple term, showing that
+jitter-induced heating is strictly governed by joint-specific loading rather than
+intrinsic policy traits. On a Unitree Go1, an analytical crossover at $3.2\Nm$
+separates posture-dominated stance joints from jitter-dominated hip joints. We
+show that zero-order-hold discretization harmonics contribute negligibly (1.6\%),
+with discretionary losses concentrated in 5--25\,Hz in-band jitter. To bypass the
+catastrophic falls caused by filter lag at operating speeds, we introduce an
+order-8 predictive linear filter with joint-load gating. This plug-and-play
+architecture recovers 47--54\% of the reachable thermal budget across regularized
+and unregularized policies without inducing falls.
 \end{abstract}
 
 % ieeeconf defines no keywords environment and ICRA does not require one.
 
 \section{Introduction}
 
-Legged locomotion policies trained via deep reinforcement learning (RL)~\cite{lee,miki} routinely
-push actuator thermal limits in deployment, frequently triggering thermal
-shutdowns in operating regimes where vendor-supplied classical controllers operate
-stably. On a Unitree G1 humanoid running whole-body RL, ankle-roll actuators reach
-$90\,^\circ$C within minutes of static standing, while the manufacturer's
-controller maintains the identical joints below $45\,^\circ$C~\cite{g1issue}.
-Conversely, on a wheeled-quadruped Go2-W, a learned policy remains thermally safe
-at $60\,^\circ$C while the vendor controller overheats to
-$84\,^\circ$C~\cite{go2w}. While it is undeniable that policy behavior governs
-motor thermal dissipation, the underlying physical mechanisms driving this
-dissipation remain a matter of contention.
+Legged locomotion policies trained via deep reinforcement learning
+(RL)~\cite{lee,miki} routinely push actuator thermal limits, often triggering
+shutdowns in regimes where classical controllers operate safely: a G1 ankle roll
+reaches $90\,^\circ$C where the vendor controller holds it below
+$45\,^\circ$C~\cite{g1issue}, while on a Go2-W it is the learned policy that stays
+thermally safe~\cite{go2w}. While policy behavior unquestionably dictates motor
+heating, the underlying mechanism remains contentious: the \emph{posture
+hypothesis} attributes overheating to inefficient steady-state holding torques,
+whereas the \emph{jitter hypothesis} blames discrete high-frequency setpoint
+oscillations.
 
-Two competing hypotheses are actively debated. Under the \emph{posture
-hypothesis}, excessive dissipation stems from high steady-state holding torques
-demanded by kinematically inefficient poses. Under the \emph{jitter hypothesis},
-dissipation is driven by high-frequency command oscillation---a ubiquitous symptom
-in RL policies, which continuously emit discrete-time setpoints that excite
-current ripple without producing useful mechanical work.
+We show that both mechanisms are physically coupled in quadrature. Because motor
+copper loss scales with squared torque, partitioning torque into its mean and
+zero-mean fluctuations yields $\mathcal{H} \propto \mathbb{E}[\tau^2] =
+\bar{\tau}^2 + \mathrm{Var}(\tau)$. Consequently, large steady-state loads
+mathematically suppress the relative impact of command variance
+$\mathrm{Var}(\tau)$. Whether command jitter governs dissipation is therefore
+dictated by joint-specific loading: stance joints are posture-dominated, whereas
+lightly loaded joints are jitter-dominated.
 
-Neither hypothesis has been rigorously examined because the two mechanisms have
-never been evaluated independently. In electric actuators, winding copper loss
-scales quadratically with motor torque. Partitioning torque into its mean and
-zero-mean fluctuations reveals that posture torque and dynamic ripple add strictly
-in quadrature, $\mathcal{H} \propto \mathbb{E}[\tau^2] = \bar{\tau}^2 +
-\mathrm{Var}(\tau)$.
-Because these terms add in quadrature, a substantial steady-state holding torque
-$\bar{\tau}$ mathematically suppresses the relative dissipation contribution of
-command variance $\mathrm{Var}(\tau)$. Consequently, whether command jitter
-governs heating is not an intrinsic property of the policy, but a state dictated
-by joint-specific loading. Both camps are, in fact, observing different joints
-across the kinematic chain.
-
-This insight highlights a fundamental engineering dilemma. In standard practice,
-researchers attempt to suppress command jitter by laboriously retuning reward
-formulations and retraining policies from scratch---a computationally burdensome
-and often fragile process, and one that is unavailable whenever the deployed
-checkpoint is fixed, as on resource-constrained platforms~\cite{resourceconstrained}. Conversely, deploying post-hoc command smoothing on
-frozen checkpoints is traditionally avoided: naive low-pass filtering inevitably
-injects phase lag into the feedback path. Because the learned policy operates as a
-high-gain feedback controller, this added latency directly erodes closed-loop
-stability margins, causing catastrophic falls at operating speeds.
-
-In this paper, we resolve this conflict and demonstrate that command-side thermal
-dissipation can be effectively mitigated post-hoc on frozen checkpoints without
-retraining. We identify the analytical crossover where steady load overtakes
-command ripple, quantify the closed-loop latency boundaries that cause filtered
-policies to destabilize, and propose a lightweight, predictive, load-gated filter
-that safely recovers the reachable thermal budget.
+Addressing this dissipation post-hoc on frozen checkpoints---often the only
+intervention available on deployed, resource-constrained
+hardware~\cite{resourceconstrained}---introduces a fundamental control dilemma. Standard low-pass filtering injects phase lag into
+the active feedback path, eroding stability margins and precipitating falls at
+operating speeds. In this work, we resolve this conflict by establishing the
+closed-loop stability limits of command filtering and proposing a predictive,
+load-gated framework that safely recovers actuator thermal margins without policy
+retraining.
 
 \subsection{Contributions}
 
 \begin{itemize}
-\item \textbf{Spectral heat decomposition.} An exact Parseval-based decomposition
-separating actuator dissipation into static posture, gait fundamentals
-(0--5\,Hz), in-band jitter (5--25\,Hz), and zero-order-hold (ZOH) discretization
-harmonics ($>25$\,Hz). We show that ZOH harmonics account for merely 1.6\% of
-heat, identifying the 5--25\,Hz band as the true locus of discretionary
-dissipation.
-\item \textbf{Quadrature thermal crossover.} We formulate and empirically confirm
-the thermal crossover at $\bar{\tau} \approx \sqrt{\mathrm{Var}(\tau)} \approx
-3.2\Nm$ on a Unitree Go1, establishing which joints are physically amenable to
-filtering.
-\item \textbf{Latency failure boundary in closed loop.} Open-loop filtering gains
-of up to 46\% evaporate in closed-loop execution. Introducing 40\,ms of filter
-latency precipitates a 20\% fall rate at 1.0\,m/s on a regularized policy and
-100\% on an unregularized baseline.
-\item \textbf{Retraining-free predictive gated filtering.} An order-8 linear
-predictive compensator coupled with joint-load gating recovers 47\% and 54\% of
-the reachable thermal budget across regularized and unregularized checkpoints
-without inducing falls.
-\item \textbf{Reward regularization diagnosis.} The conventional
-\texttt{action\_rate} penalty has negligible authority over command-side thermal
-load (8\% transient increase when ablated), whereas direct torque and energy
-penalties dictate the accessible budget (89\% increase).
+\item \textbf{Spectral and quadrature heat decomposition.} We formulate an exact
+Parseval-based decomposition isolating copper loss into static posture, gait
+fundamentals (0--5\,Hz), in-band jitter (5--25\,Hz), and zero-order-hold (ZOH)
+harmonics ($>25$\,Hz). We identify an analytical crossover at $\bar{\tau} \approx
+\sqrt{\mathrm{Var}(\tau)} \approx 3.2\Nm$ on a Unitree Go1, revealing that ZOH
+harmonics contribute merely 1.6\% and establishing which joints are physically
+amenable to filtering.
+\item \textbf{Closed-loop latency failure boundary.} We quantify the divergence
+between open-loop replay, with up to 46\% apparent savings, and closed-loop
+execution, demonstrating that 40\,ms of filter latency induces up to a 100\% fall
+rate at operating speed (1.0\,m/s).
+\item \textbf{Retraining-free predictive gated filtering.} We propose an AR(8)
+predictive compensator paired with joint-load gating that eliminates phase lag,
+safely recovering 47--54\% of the reachable thermal budget across diverse
+checkpoints without retraining or stability loss.
+\item \textbf{Regularization diagnostics.} We demonstrate that conventional
+\texttt{action\_rate} penalties exert minimal authority over command-side thermal
+load ($+8\%$ step transient when ablated), whereas direct effort penalties dictate
+the accessible thermal budget ($+89\%$).
 \end{itemize}
 
 \section{Actuation Pipeline and Problem Formulation}
@@ -819,17 +787,19 @@ confirming the $3.2\Nm$ crossover on a dynamometer, are the essential next steps
 
 \bibitem{lee}
 J. Lee, J. Hwangbo, L. Wellhausen, V. Koltun, and M. Hutter, ``Learning
-quadrupedal locomotion over challenging terrain,'' \emph{Science Robotics},
-vol. 5, no. 47, eabc5986, 2020.
+quadrupedal locomotion over challenging terrain,'' \emph{Sci. Robot.}, vol. 5,
+no. 47, art. no. eabc5986, 2020.
 
 \bibitem{miki}
 T. Miki, J. Lee, J. Hwangbo, L. Wellhausen, V. Koltun, and M. Hutter, ``Learning
-robust perceptive locomotion for quadrupedal robots in the wild,'' \emph{Science
-Robotics}, vol. 7, no. 62, eabk2822, 2022.
+robust perceptive locomotion for quadrupedal robots in the wild,'' \emph{Sci.
+Robot.}, vol. 7, no. 62, art. no. eabk2822, 2022.
 
 \bibitem{g1issue}
-NVIDIA Research, ``Ankle roll motors overheating on G1,''
-GR00T-WholeBodyControl, GitHub issue \#174, 2026.
+NVlabs (NVIDIA Research), ``Ankle roll (both sides) over\-heats to
+90\,$^{\circ}$C within ${\sim}5$--10\,min on G1 with SONIC, even at idle,''
+GR00T-WholeBodyControl, GitHub issue \#174, Jun. 2026. [Online]. Available:
+\url{https://github.com/NVlabs/GR00T-WholeBodyControl/issues/174}
 
 \bibitem{go2w}
 T. Matsuzawa, K. Irie, T. Yoshida, T. Suzuki, Y. Hara, and M. Tomono,
@@ -837,9 +807,10 @@ T. Matsuzawa, K. Irie, T. Yoshida, T. Suzuki, Y. Hara, and M. Tomono,
 deep reinforcement learning,'' arXiv:2606.21387, 2026.
 
 \bibitem{resourceconstrained}
-\pending, ``Robust reinforcement learning-based locomotion for
-resource-constrained quadrupeds with exteroceptive sensing,'' arXiv:2505.12537,
-2025.
+D. Plozza, P. Apostol, P. Joseph, S. Schl\"{a}pfer, and M. Magno, ``Robust
+reinforcement learning-based locomotion for resource-constrained quadrupeds with
+exteroceptive sensing,'' in \emph{Proc. IEEE Int. Conf. Robot. Autom. (ICRA)},
+2025, pp. 8121--8127.
 
 \bibitem{wensing}
 P. M. Wensing, A. Wang, S. Seok, D. Otten, J. Lang, and S. Kim, ``Proprioceptive
@@ -849,26 +820,30 @@ no. 3, pp. 509--522, 2017.
 
 \bibitem{minicheetah}
 B. Katz, J. Di Carlo, and S. Kim, ``Mini Cheetah: A platform for pushing the
-limits of dynamic quadruped control,'' in \emph{Proc. ICRA}, 2019.
+limits of dynamic quadruped control,'' in \emph{Proc. IEEE Int. Conf. Robot.
+Autom. (ICRA)}, 2019, pp. 6295--6301.
 
 \bibitem{anymal}
 M. Hutter et al., ``ANYmal --- a highly mobile and dynamic quadrupedal robot,''
-in \emph{Proc. IROS}, 2016.
+in \emph{Proc. IEEE/RSJ Int. Conf. Intell. Robots Syst. (IROS)}, 2016,
+pp. 38--44.
 
 \bibitem{hwangbo}
 J. Hwangbo et al., ``Learning agile and dynamic motor skills for legged robots,''
-\emph{Science Robotics}, vol. 4, no. 26, eaau5872, 2019.
+\emph{Sci. Robot.}, vol. 4, no. 26, art. no. eaau5872, 2019.
 
 \bibitem{unitreesdk}
-Unitree Robotics, ``unitree\_legged\_sdk,''
-\texttt{example\_py/\allowbreak example\_position.py}, GitHub, 2024.
+Unitree Robotics, ``unitree\_legged\_sdk:
+\texttt{example\_py/\allowbreak example\_position.py},'' source code, GitHub,
+2024. [Online]. Available:
+\url{https://github.com/unitreerobotics/unitree_legged_sdk}
 
 \bibitem{lite3blog}
-DEEP Robotics, ``Physical AI 101: reinforcement learning with the Lite3,''
+DEEP Robotics, ``Physical AI 101: Reinforcement learning with the Lite3,''
 company blog, 2025.
 
 \bibitem{gom8010}
-Unitree Robotics, ``GO-M8010-6 motor data user manual,'' V1.0, 2023.
+Unitree Robotics, ``GO-M8010-6 motor data user manual,'' V1.0, datasheet, 2023.
 
 \bibitem{j60}
 DEEP Robotics, ``J60 joint,'' product page, 2024.
@@ -880,14 +855,16 @@ lightweight framework for GPU-accelerated robot learning,'' arXiv:2601.22074,
 
 \bibitem{orbit}
 M. Mittal et al., ``Orbit: A unified simulation framework for interactive robot
-learning environments,'' \emph{IEEE Robot. Autom. Lett.}, 2023.
+learning environments,'' \emph{IEEE Robot. Autom. Lett.}, vol. 8, no. 6,
+pp. 3740--3747, 2023.
 
 \bibitem{maxon}
 maxon motor ag, ``EC max 30 \O30\,mm, brushless, 60\,W,'' datasheet, 2024.
 
 \bibitem{wallscheid}
 O. Wallscheid, ``Thermal monitoring of electric motors: State-of-the-art review
-and future challenges,'' \emph{IEEE Open J. Ind. Appl.}, 2021.
+and future challenges,'' \emph{IEEE Open J. Ind. Appl.}, vol. 2, pp. 204--223,
+2021.
 
 \bibitem{kirchgassner}
 W. Kirchg\"{a}ssner, O. Wallscheid, and J. B\"{o}cker, ``Estimating electric motor
@@ -895,16 +872,17 @@ tem\-per\-a\-tures with deep resid\-ual ma\-chine learn\-ing,'' \emph{IEEE Trans
 Electron.}, vol. 36, no. 7, pp. 7480--7488, 2021.
 
 \bibitem{thermalpred}
-\pending, ``Deep learning for model-free prediction of thermal states of robot
-joint motors,'' arXiv:2509.12739, 2025.
+T. K. La and E. G. Kaigom, ``Deep learning for model-free prediction of thermal
+states of robot joint motors,'' \emph{IFAC-PapersOnLine}, vol. 59, no. 18,
+pp. 211--216, 2025, arXiv:2509.12739.
 
 \bibitem{urs}
 K. Urs, C. E. Adu, E. J. Rouse, and T. Y. Moore, ``Design and characterization of
-3D printed, open-source actuators for legged locomotion,'' in \emph{Proc. IROS},
-2022.
+3D printed, open-source actuators for legged locomotion,'' in \emph{Proc.
+IEEE/RSJ Int. Conf. Intell. Robots Syst. (IROS)}, 2022, pp. 1957--1964.
 
 \bibitem{energymotor}
-\pending, ``Energy efficient control of electric motors,'' arXiv:2109.11113,
+F. Aghili, ``Energy efficient control of electric motors,'' arXiv:2109.11113,
 2021.
 
 \bibitem{cliff}
@@ -913,17 +891,18 @@ N. Cliff, ``Dominance statistics: Ordinal analyses to answer ordinal questions,'
 
 \bibitem{rudin}
 N. Rudin, D. Hoeller, P. Reist, and M. Hutter, ``Learning to walk in minutes
-using massively parallel deep reinforcement learning,'' in \emph{Proc. CoRL},
-2022.
+using massively parallel deep reinforcement learning,'' in \emph{Proc. Conf.
+Robot Learn. (CoRL)}, 2021, pp. 91--100.
 
 \bibitem{isaacgym}
 V. Makoviychuk et al., ``Isaac Gym: High performance GPU-based physics simulation
-for robot learning,'' arXiv:2108.10470, 2021.
+for robot learning,'' in \emph{Proc. Adv. Neural Inf. Process. Syst. (NeurIPS)
+Datasets Benchmarks Track}, 2021, arXiv:2108.10470.
 
 \bibitem{wtw}
 G. B. Margolis and P. Agrawal, ``Walk these ways: Tuning robot control for
-generalization with multiplicity of behavior,'' in \emph{Proc. CoRL}, 2023,
-pp. 22--31.
+generalization with multiplicity of behavior,'' in \emph{Proc. Conf. Robot Learn.
+(CoRL)}, 2022, pp. 22--31.
 
 \bibitem{playground}
 K. Zakka et al., ``MuJoCo Playground,'' arXiv:2502.08844, 2025.
@@ -937,20 +916,22 @@ F. J. Harris, ``On the use of windows for harmonic analysis with the discrete
 Fourier transform,'' \emph{Proc. IEEE}, vol. 66, no. 1, pp. 51--83, 1978.
 
 \bibitem{motorselect}
-\pending, ``Alternative metrics to select motors for quasi-direct drive
-actuators,'' arXiv:2202.12365, 2022.
+K. Urs, C. E. Adu, E. J. Rouse, and T. Y. Moore, ``Alternative metrics to select
+motors for quasi-direct drive actuators,'' arXiv:2202.12365, 2022.
 
 \bibitem{energyreg}
-\pending, ``Adaptive energy regularization for autonomous gait transition and
-energy-efficient quadruped locomotion,'' arXiv:2403.20001, 2024.
+B. Liang et al., ``Adaptive energy regularization for autonomous gait transition
+and energy-efficient quadruped locomotion,'' in \emph{Proc. IEEE Int. Conf.
+Robot. Autom. (ICRA)}, 2025, pp. 5350--5356.
 
 \bibitem{gustafsson}
 F. Gustafsson, ``Determining the initial states in forward-backward filtering,''
 \emph{IEEE Trans. Signal Process.}, vol. 44, no. 4, pp. 988--992, 1996.
 
 \bibitem{concurrent}
-\pending, ``Concurrent training of a control policy and a state estimator for
-dynamic and robust legged locomotion,'' arXiv:2202.05481, 2022.
+G. Ji, J. Mun, H. Kim, and J. Hwangbo, ``Concurrent training of a control policy
+and a state estimator for dynamic and robust legged locomotion,'' \emph{IEEE
+Robot. Autom. Lett.}, vol. 7, no. 2, pp. 4630--4637, 2022.
 
 \bibitem{delayaware}
 B. Chen, M. Xu, L. Li, and D. Zhao, ``Delay-aware model-based reinforcement
@@ -958,25 +939,24 @@ learning for continuous control,'' \emph{Neurocomputing}, vol. 450,
 pp. 119--128, 2021.
 
 \bibitem{rtc}
-K. Black et al., ``Real-time execution of action chunking flow policies,'' in
-\emph{Proc. NeurIPS}, 2025.
+K. Black, M. Y. Galliker, and S. Levine, ``Real-time execution of action chunking
+flow policies,'' in \emph{Proc. Adv. Neural Inf. Process. Syst. (NeurIPS)}, 2025.
 
 \bibitem{impactmit}
-\pending, ``Guiding energy-efficient locomotion through impact mitigation
-rewards,'' arXiv:2510.09543, 2025.
+C. Wang, A. Viswanathan, E. Sihite, and A. Ramezani, ``Guiding energy-efficient
+locomotion through impact mitigation rewards,'' arXiv:2510.09543, 2025.
 
 \bibitem{compliantfeet}
-\pending, ``Energy-efficient quadruped locomotion with compliant feet,''
-arXiv:2605.14411, 2026.
+P. Pal, S. Kolathaya, and A. Ghosal, ``Energy-efficient quadruped locomotion with
+compliant feet,'' arXiv:2605.14411, 2026.
 
 \bibitem{thermalaware}
-\pending, ``Learning thermal-aware locomotion policies for an
-electrically-actuated quadruped robot,'' arXiv:2603.01631, 2026.
+L. Qian, Y. Wan, S. Wang, and X. Luo, ``Learning thermal-aware locomotion
+policies for an electrically-actuated quadruped robot,'' arXiv:2603.01631, 2026.
 
 \bibitem{residual}
-Y. Wan, W. Lin, L. Qian, Y. Zou, W. Wu, S. Liao, C. Zhao, and X. Luo, ``Learning
-to balance motor thermal safety and quadrupedal locomotion performance with
-residual policy,'' arXiv:2605.27046, 2026.
+Y. Wan et al., ``Learning to balance motor thermal safety and quadrupedal
+locomotion performance with residual policy,'' arXiv:2605.27046, 2026.
 
 \bibitem{jorgensen}
 S. J. Jorgensen, J. Holley, F. Mathis, J. S. Mehling, and L. Sentis, ``Thermal
@@ -988,23 +968,21 @@ S. Yamamori et al., ``Actuator reality shaping for zero-shot sim-to-real robot
 learning,'' arXiv:2607.02205, 2026.
 
 \bibitem{kourdis}
-R. Kourdis, M. St\k{e}pie\'{n}, J. Manhes, N. Mansard, S. Tonneau, P. Sou\`{e}res,
-and T. Flayols, ``Very high frequency interpolation for direct torque control,''
-arXiv:2509.24175, 2025.
+R. Kourdis et al., ``Very high frequency interpolation for direct torque
+control,'' arXiv:2509.24175, 2025.
 
 \bibitem{vra}
-L. Zhang, J. Wang, T. Zhang, Z. Song, X. Zeng, W. Xia, Z. Li, and Y. Liu, ``VRA:
-Grounding discrete-time joint acceleration in voltage-constrained actuation,'' in
-\emph{Proc. RSS}, 2026.
+L. Zhang et al., ``Grounding discrete-time joint-level acceleration bounds in
+voltage-constrained actuation,'' in \emph{Proc. Robot., Sci. Syst. (RSS)}, 2026.
 
 \bibitem{lipo}
 D. Son and S. Park, ``LiPo: A lightweight post-optimization framework for
-smoothing action chunks generated by learned policies,'' arXiv:2506.05165, 2025.
+smoothing action chunks generated by learned policies,'' \emph{Int. J. Control
+Autom. Syst.}, vol. 23, no. 11, pp. 3284--3292, 2025, arXiv:2506.05165.
 
 \bibitem{bspline}
-X. Han, H. Xiong, H. Chen, C. Liu, A. Torralba, Y. Zhu, and Y. Du, ``B-spline
-policy: Accelerating manipulation policies via B-spline action representations,''
-arXiv:2607.09648, 2026.
+X. Han et al., ``B-spline policy: Accelerating manipulation policies via B-spline
+action representations,'' arXiv:2607.09648, 2026.
 
 \bibitem{weddington}
 J. C. Weddington, B. P. \"{O}lveczky, and S. A. Baccus, ``Reinforcement learning
@@ -1012,33 +990,39 @@ on cost-constrained quadrupedal hardware,'' arXiv:2607.26434, 2026.
 
 \bibitem{act}
 T. Z. Zhao, V. Kumar, S. Levine, and C. Finn, ``Learning fine-grained bimanual
-manipulation with low-cost hardware,'' arXiv:2304.13705, 2023.
+manipulation with low-cost hardware,'' in \emph{Proc. Robot., Sci. Syst. (RSS)},
+2023, arXiv:2304.13705.
 
 \bibitem{diffusion}
-C. Chi, Z. Xu, S. Feng, E. Cousineau, Y. Du, B. Burchfiel, R. Tedrake, and
-S. Song, ``Diffusion policy: Visuomotor policy learning via action diffusion,''
-\emph{Int. J. Robot. Res.}, 2025.
+C. Chi et al., ``Diffusion policy: Visuomotor policy learning via action
+diffusion,'' \emph{Int. J. Robot. Res.}, vol. 44, no. 10--11, pp. 1684--1704,
+2025.
 
 \bibitem{domainrand}
 J. Tobin, R. Fong, A. Ray, J. Schneider, W. Zaremba, and P. Abbeel, ``Domain
 randomization for transferring deep neural networks from simulation to the real
-world,'' arXiv:1703.06907, 2017.
+world,'' in \emph{Proc. IEEE/RSJ Int. Conf. Intell. Robots Syst. (IROS)}, 2017,
+pp. 23--30.
 
 \bibitem{uposi}
 W. Yu, J. Tan, C. K. Liu, and G. Turk, ``Preparing for the unknown: Learning a
-universal policy with online system identification,'' in \emph{Proc. RSS}, 2017.
+universal policy with online system identification,'' in \emph{Proc. Robot., Sci.
+Syst. (RSS)}, 2017.
 
 \bibitem{actconstrained}
-\pending, ``Actuator-constrained reinforcement learning for high-speed
-quadrupedal locomotion,'' arXiv:2312.17507, 2023.
+Y.-H. Shin, T.-G. Song, G. Ji, and H.-W. Park, ``Actuator-constrained
+reinforcement learning for high-speed quadrupedal locomotion,'' arXiv:2312.17507,
+2023.
 
 \bibitem{caps}
 S. Mysore, B. Mabsout, R. Mancuso, and K. Saenko, ``Regularizing action policies
-for smooth control with reinforcement learning,'' in \emph{Proc. ICRA}, 2021.
+for smooth control with reinforcement learning,'' in \emph{Proc. IEEE Int. Conf.
+Robot. Autom. (ICRA)}, 2021, pp. 1810--1816.
 
 \bibitem{lipschitz}
 Z. Chen et al., ``Learning smooth humanoid locomotion through
-Lipschitz-constrained policies,'' in \emph{Proc. IROS}, 2025.
+Lipschitz-constrained policies,'' in \emph{Proc. IEEE/RSJ Int. Conf. Intell.
+Robots Syst. (IROS)}, 2025, pp. 4743--4750.
 
 \bibitem{specnorm}
 J. Shin, W. Cha, D. Kim, J. Cha, and J. Park, ``Spectral normalization for
@@ -1046,44 +1030,50 @@ Lipschitz-constrained policies on learning humanoid locomotion,''
 arXiv:2504.08246, 2025.
 
 \bibitem{benchmark}
-G. Christmann, Y. Luo, H. Mandala, and W. Chen, ``Benchmarking smoothness and
-reducing high-frequency oscillations in continuous control policies,'' in
-\emph{Proc. IROS}, 2024.
+G. Christmann, Y.-S. Luo, H. Mandala, and W.-C. Chen, ``Benchmarking smoothness
+and reducing high-frequency oscillations in continuous control policies,'' in
+\emph{Proc. IEEE/RSJ Int. Conf. Intell. Robots Syst. (IROS)}, 2024,
+pp. 627--634.
 
 \bibitem{l2c2}
-\pending, ``L2C2: Locally Lipschitz continuous constraint towards stable and
-smooth reinforcement learning,'' arXiv:2202.07152, 2022.
+T. Kobayashi, ``L2C2: Locally Lipschitz continuous constraint towards stable and
+smooth reinforcement learning,'' in \emph{Proc. IEEE/RSJ Int. Conf. Intell.
+Robots Syst. (IROS)}, 2022, pp. 4032--4039.
 
 \bibitem{regsmooth}
-\pending, ``Redesigning regularization for effective policy smoothing,''
-arXiv:2606.13169, 2026.
+T. Kobayashi and N. Yamanaka, ``Redesigning regularization for effective policy
+smoothing,'' arXiv:2606.13169, 2026.
 
 \bibitem{qgrad}
-\pending, ``Stabilizing the Q-gradient field for policy smoothness in
-actor-critic methods,'' arXiv:2601.22970, 2026.
+J. W. Lee, K. Kwak, D. Kim, and H. Hwang, ``Stabilizing the Q-gradient field for
+policy smoothness in actor-critic methods,'' arXiv:2601.22970, 2026.
 
 \bibitem{compliancebounds}
-\pending, ``Task-specified compliance bounds for humanoids via
+Z. He and Y. Nakamura, ``Task-specified compliance bounds for humanoids via
 Lipschitz-constrained policies,'' arXiv:2603.16180, 2026.
 
 \bibitem{gangapurwala}
 S. Gangapurwala, L. Campanaro, and I. Havoutis, ``Learning low-frequency motion
-control for robust and dynamic robot locomotion,'' in \emph{Proc. ICRA}, 2023.
+control for robust and dynamic robot locomotion,'' in \emph{Proc. IEEE Int. Conf.
+Robot. Autom. (ICRA)}, 2023, pp. 5085--5091.
 
 \bibitem{tallec}
 C. Tallec, L. Blier, and Y. Ollivier, ``Making deep Q-learning methods robust to
-time discretization,'' in \emph{Proc. ICML}, 2019.
+time discretization,'' in \emph{Proc. Int. Conf. Mach. Learn. (ICML)}, 2019,
+pp. 6096--6104.
 
 \bibitem{tarc}
 A. Sukhija, L. Treven, J. Cheng, F. D\"{o}rfler, S. Coros, and A. Krause, ``TARC:
 Time-adaptive robotic control,'' arXiv:2510.23176, 2025.
 
 \bibitem{delaysurvey}
-\pending, ``Delays in reinforcement learning,'' arXiv:2309.11096, 2023.
+P. Liotet, ``Delays in reinforcement learning,'' arXiv:2309.11096, 2023.
 
 \bibitem{tnn}
-W. Kirchg\"{a}ssner et al., ``Thermal neural networks: Lumped-parameter thermal
-modeling with state-space machine learning,'' arXiv:2103.16323, 2021.
+W. Kirchg\"{a}ssner, O. Wallscheid, and J. B\"{o}cker, ``Thermal neural networks:
+Lumped-parameter thermal modeling with state-space machine learning,''
+\emph{Eng. Appl. Artif. Intell.}, vol. 117, art. no. 105537, 2023,
+arXiv:2103.16323.
 
 \end{thebibliography}
 
