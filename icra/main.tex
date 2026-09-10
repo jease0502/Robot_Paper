@@ -43,6 +43,7 @@
 \setlength{\abovedisplayskip}{3pt plus 1pt minus 1pt}
 \setlength{\belowdisplayskip}{3pt plus 1pt minus 1pt}
 
+\raggedbottom   % lets a column stop a few points short rather than overrun
 \pagestyle{empty}
 \thispagestyle{empty}
 
@@ -51,6 +52,7 @@
 % independently and its switch says what is lost. Rebuild to see the count.
 %
 % off by default: the raw plots whose numbers a table already carries.
+\newif\ifshowPolicyTable  \showPolicyTablefalse   % off: Sec. V-F states every value
 \newif\ifshowLoadTable  \showLoadTablefalse   % off: loses the raw E1 sweep grid
 \newif\ifshowFilterSchematic  \showFilterSchematicfalse   % off: loses the kernel-placement schematic; the three schemes are described in the text
 \newif\ifshowBandTable  \showBandTablefalse   % off: loses the four-band table; the same split is in Fig. 3 and in Table 5
@@ -185,7 +187,7 @@ Unitree GO-M8010-6~\cite{gom8010} and 1\,kHz for the DeepRobotics J60~\cite{j60}
 
 \begin{figure*}[!tb]
 \centering
-\includegraphics[width=0.82\textwidth]{figs/fig1-architecture.pdf}
+\includegraphics[width=0.72\textwidth]{figs/fig1-architecture.pdf}
 \caption{Where the command goes, and where the intervention sits. The policy is
 frozen; the only addition is the dashed block. Two details carry the paper: the
 torque tap feeding the four-band decomposition, and the dashed feedback path. The
@@ -199,7 +201,7 @@ low-level drive. Operating at 50\,Hz into 500\,Hz, each setpoint is held constan
 across ten sub-ticks before stepping discontinuously, producing an instantaneous
 proportional transient of $k_p \Delta q$ prior to mechanical rotor acceleration.
 
-In standardized training environments such as \texttt{unitree\_rl\_mjlab}~\cite{mjlab},
+In standardized training environments such as \texttt{unitree\_rl\_\allowbreak mjlab}~\cite{mjlab},
 which inherit the manager-based gain and action-scale conventions of Isaac
 Lab~\cite{orbit}, PD gains are tuned for a target closed-loop natural frequency of $f_n = 10$\,Hz with
 a damping ratio $\zeta = 2.0$, and action scaling is normalized to $0.25\,e/k_p$,
@@ -226,7 +228,9 @@ fluctuating components, total expected dissipation is
 \end{split}
 \label{eq:parseval}
 \end{equation}
-where $f_g = 5$\,Hz isolates fundamental gait frequencies,
+where $f_g = 5$\,Hz isolates fundamental gait frequencies. The trot studied here
+has a 2\,Hz stride fundamental, so a 5\,Hz split spans it and its second
+harmonic, covering the contact cycle without reaching into the jitter band.
 $f_{\mathrm{Nyq}} = 25$\,Hz is the policy Nyquist frequency, and
 $\mathbb{E}_k[\mathrm{Var}_{\mathrm{sub}}(\tau)]$ represents the intra-step
 variance above Nyquist caused by ZOH discretization. The sum of the final two
@@ -303,12 +307,16 @@ linear-prediction sense~\cite{makhoul} and rolled forward
 two steps. This enables a symmetric Hann window~\cite{harris} to be applied without awaiting
 future samples, eliminating filter phase lag\ifshowFilterSchematic (Fig.~\ref{fig:filters})\fi. Joints
 whose mean absolute torque $|\bar{\tau}|$ falls below the $3.2\Nm$ threshold are
-filtered, whereas heavily loaded joints pass through unmodified.
+filtered, whereas heavily loaded joints pass through unmodified. The gate is a
+fixed per-joint mask, not a runtime threshold: $|\bar{\tau}|$ is measured once
+per joint on the same baseline rollouts that fit the predictor and then held
+constant, so nothing is recomputed online and the gate cannot chatter. A reactive
+variant keyed to instantaneous torque is a natural extension, not evaluated here.
 
 \ifshowFilterSchematic  % off: loses the kernel-placement schematic; the three schemes are described in the text
 \begin{figure}[!tb]
 \centering
-\includegraphics[width=0.95\columnwidth]{figs/fig5-three-filters.pdf}
+\includegraphics[width=0.88\columnwidth]{figs/fig5-three-filters.pdf}
 \caption{Three ways to smooth a command, and what each one costs. The kernel is
 the same shape throughout; only where it sits in time changes. The causal filter's
 centre of mass sits behind now, and that gap \emph{is} the phase lag. Delaying two
@@ -351,7 +359,7 @@ $20\Nm$ & 1.00 & 1.00 & 1.01 & \textbf{1.02}  & 1.06 \\
 \ifshowLoadSweep  % off: loses the rho/(1-rho) linearity and its 0.45 percent residual
 \begin{figure*}[!tb]
 \centering
-\includegraphics[width=0.82\textwidth]{figs/e1-rho-sweep.png}
+\includegraphics[width=0.72\textwidth]{figs/e1-rho-sweep.png}
 \caption{Single-joint load sweep (E1). Left: with no load, heat climbs steeply
 with out-of-band command power while the joint's motion does not. Centre: the
 relationship is exactly linear in $\rho/(1-\rho)$, maximum residual 0.45\%. Right:
@@ -378,7 +386,7 @@ dissipation, whereas jitter drives overheating in lightly loaded joints.
 
 \begin{figure}[!tb]
 \centering
-\includegraphics[width=0.95\columnwidth]{figs/fig2-crossover.pdf}
+\includegraphics[width=0.88\columnwidth]{figs/fig2-crossover.pdf}
 \caption{The quadrature crossover. Which term dominates is a property of the
 joint, not of the policy. The curves are the definition
 $r = \mathrm{Var}/(\bar{\tau}^2+\mathrm{Var})$, not a fit; the joint placements and
@@ -419,7 +427,7 @@ Task terms only       & 0.1612 & 5.64 $\pm$ 0.25 & {+}130\%\,$\pm$\,18 \\
 \ifshowSpectra  % off: loses raw command spectra; Table II carries the numbers
 \begin{figure*}[!tb]
 \centering
-\includegraphics[width=0.82\textwidth]{figs/command-spectrum-annotated.png}
+\includegraphics[width=0.72\textwidth]{figs/command-spectrum-annotated.png}
 \caption{Command spectra across reward ablations. The unregularized policy is flat
 across the whole band. The grey shading is the 15.3\,Hz actuator bandwidth that
 $\rho$ is defined against---\emph{not} the 5--25\,Hz filter-reachable band, which
@@ -470,7 +478,7 @@ Zero-phase Butter. (12\,Hz) & 0.540 & \textbf{0.995} & No \\
 \ifshowOpenLoopSweep  % off: loses raw open-loop sweep; Table III carries the numbers
 \begin{figure*}[!tb]
 \centering
-\includegraphics[width=0.82\textwidth]{figs/e3-command-filters.png}
+\includegraphics[width=0.72\textwidth]{figs/e3-command-filters.png}
 \caption{Open-loop filter sweep (E2). Up and to the left is better. The zero-phase
 curve dominates the causal one at every cutoff, and the gap between them is phase
 lag alone. At $10\Nm$ of steady load the whole picture collapses to a vertical
@@ -486,7 +494,7 @@ filter preserves only 74.5\% of intended motion due entirely to phase lag.
 Out-of-sample \emph{open-loop} command prediction accuracy reaches $R^2 = 0.679$
 on the full-reward policy, declining to 0.385 without effort terms, and collapsing
 to 0.059 on an unregularized checkpoint. A separate predictor fitted for the
-closed-loop experiments reports different values (Table~\ref{tab:policies}).
+closed-loop experiments reports different values\ifshowPolicyTable\ (Table~\ref{tab:policies})\fi.
 
 \subsection{Spectral Allocation of the Thermal Budget}
 
@@ -547,7 +555,7 @@ Calves  & 5.9--6.9 & 32--38\% & 45--54\% & 13--16\% & 1.1--1.6\% & \textbf{14--1
 
 \begin{figure*}[!tb]
 \centering
-\includegraphics[width=0.82\textwidth]{figs/fig3-band-budget.pdf}
+\includegraphics[width=0.72\textwidth]{figs/fig3-band-budget.pdf}
 \caption{The heat budget, both policies. The $>25$\,Hz sliver is drawn to scale:
 that is what 1.6\% looks like. Removing the effort reward terms moves 25
 percentage points of heat into the band a filter can reach, and the filter returns
@@ -565,15 +573,16 @@ phase margin.
 
 \begin{table}[!tb]
 \caption{Full-body closed-loop locomotion performance ($n = 30$ per scheme, E3).
-Cliff's $\delta$ is reported against ZOH. Track.\ is commanded-velocity
-tracking error normalised to the ZOH baseline; larger is worse.}
+Cliff's $\delta$ is reported against ZOH. Vel.\ err.\ is commanded-velocity
+tracking error normalised to the ZOH baseline, whose absolute value is
+0.064\,m/s; larger is worse.}
 \label{tab:closedloop}
 \centering
 \footnotesize
-\setlength{\tabcolsep}{3pt}
+\setlength{\tabcolsep}{2.2pt}
 \begin{tabular}{lrrrrr}
 \toprule
-Scheme & $\mathcal{H}/\mathcal{H}_{\mathrm{ZOH}}$ & Track. & $\delta(H)$ & $\delta(v)$ & Fall \\
+Scheme & $\mathcal{H}/\mathcal{H}_{\mathrm{ZOH}}$ & Vel.\ err. & $\delta(H)$ & $\delta(v)$ & Fall \\
 \midrule
 Baseline ZOH              & 1.000 & 1.000 & 0.00 & 0.00 & 0.00 \\
 Linear interpolation      & 0.956 & 1.048 & $-0.31$ & 0.13 & 0.00 \\
@@ -592,7 +601,7 @@ Predictive, policy-unaw. & 0.927 & 1.236 & $-0.33$ & 0.64 & 0.00 \\
 \ifshowClosedLoopScatter  % off: loses the heat-vs-tracking trade-off and which joints the gate touches
 \begin{figure*}[!tb]
 \centering
-\includegraphics[width=0.82\textwidth]{figs/e4-closed-loop.png}
+\includegraphics[width=0.72\textwidth]{figs/e4-closed-loop.png}
 \caption{Closed loop, full-reward policy (E3). Heat against tracking error with
 the filter inside the loop. Right panel: which joints the gate lets the filter
 touch. The four calves sit above the $3.2\Nm$ line and pass through untouched.}
@@ -652,7 +661,7 @@ Predictive + gate, track. & 1.298 & 0.995 & 1.250 \\
 
 \begin{figure*}[!tb]
 \centering
-\includegraphics[width=0.82\textwidth]{figs/fig4-latency-backfire.pdf}
+\includegraphics[width=0.72\textwidth]{figs/fig4-latency-backfire.pdf}
 \caption{Latency backfires, and only at speed. The same delayed filter is the best
 scheme tested at 0.5\,m/s and falls in a fifth of episodes at 1.0\,m/s. Bars above
 the ZOH baseline are worse than doing nothing. This argues against evaluating a
@@ -669,14 +678,16 @@ queue~\cite{delayaware}---but that route requires retraining, whereas real-time
 chunking hides inference latency by inpainting the next chunk rather than
 delaying execution~\cite{rtc}. Gating the predictive filter by joint load
 costs 2.5 percentage points of thermal relief but maintains tracking fidelity at
-0.995 of baseline at 1.0\,m/s without falls.
+0.995 of baseline at 1.0\,m/s without falls. In absolute terms that 1.157 is
+0.074\,m/s of velocity error against the baseline's 0.064, a difference of
+0.010\,m/s; the 5\,Hz Butterworth's 2.594 is the regime where the robot falls.
 
 \subsection{Invariant Recovery Ratio on Unregularized Policies}
 
 Evaluating the closed-loop pipeline on an unregularized policy, trained without
-torque or energy penalties, demonstrates consistent budget recovery
-(Table~\ref{tab:policies}).
+torque or energy penalties, demonstrates consistent budget recovery\ifshowPolicyTable\ (Table~\ref{tab:policies})\fi.
 
+\ifshowPolicyTable  % off: Sec. V-F already states every value in it
 \begin{table}[!tb]
 \caption{Regularized against effort-ablated policies (E3, E4). The predictor
 $R^2$ row is the closed-loop fit; the open-loop fit is a different quantity.}
@@ -701,11 +712,12 @@ Zero-phase fall rate & 0.07 & \textbf{0.37} \\
 \bottomrule
 \end{tabular}
 \end{table}
+\fi
 
 \ifshowSecondPolicyScatter  % off: loses second-policy scatter; Table IX carries the numbers
 \begin{figure*}[!tb]
 \centering
-\includegraphics[width=0.82\textwidth]{figs/e4-closed-loop-no-torques-energy.png}
+\includegraphics[width=0.72\textwidth]{figs/e4-closed-loop-no-torques-energy.png}
 \caption{Closed loop, effort terms removed. The same matrix on the wasteful
 policy. The predictive filter moves much further left; the delayed filter moves
 off the chart to the right.}
@@ -787,10 +799,13 @@ so a lumped-parameter or learned thermal network would be required to turn the
 proxy into a winding temperature~\cite{tnn};
 single-joint sweeps omit contact dynamics; and every result is measured on flat
 terrain on one quadruped. The 5\,Hz gait split is hand-chosen and has not been
-swept. The reward ablations now carry five seeds and paired intervals, while
-every other experiment here remains single-seed, with no confidence
-intervals. Extending the decomposition to a humanoid such as the Unitree G1, and
-confirming the $3.2\Nm$ crossover on a dynamometer, are the essential next steps.
+swept. Reward regularization is mapped across five independently trained seeds
+with paired intervals; the closed-loop results characterize one frozen checkpoint
+per policy class over 30 rollouts across three velocity regimes, establishing the
+behaviour of a checkpoint rather than the spread across training runs. Several
+checkpoints per class, other morphologies including a humanoid such as the Unitree
+G1, and a dynamometer confirmation of the $3.2\Nm$ crossover are the essential
+next steps.
 
 % ICRA 2027: "The use of content generated by AI in an article (including but not
 % limited to text, figures, images, and code) must be disclosed in the

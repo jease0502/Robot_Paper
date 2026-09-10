@@ -76,6 +76,7 @@ All eight are still in the source; each comes back by flipping its switch.
 
 | Switch | Item | What is lost |
 |---|---|---|
+| `showPolicyTable` | Regularized vs effort-ablated table | Sec. V-F states every value in it |
 | `showLoadTable` | E1 load-sweep grid | Sec. V-A states both endpoints in prose |
 | `showJointTable` | Per-joint-family band split | The 14–17% / 33–45% figures **the abstract quotes** |
 | `showLoadSweep` | E1 sweep figure | The ρ/(1−ρ) linearity and its 0.45% residual |
