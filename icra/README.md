@@ -111,15 +111,22 @@ sheared the "Deployable" column off Table III; `\small` and a smaller
 
 - [ ] **Re-verify the venue rules.** They changed between ICRA 2025 and 2027.
 - [x] ~~Get under 8 pages.~~ Done: 8 pages, verified by rebuild.
-- [ ] Fill the `\pending` markers — paper ID, and reference [9]'s author list.
+- [x] ~~Fill the `\pending` markers.~~ None render in the PDF. The three left in
+      the source are the macro definition, the inactive non-anonymous author
+      branch, and the English word "pending" in a sentence about delayed MDPs.
+- [ ] At submission, put the PaperPlaza-assigned paper ID back in the author block.
+- [ ] Decide whether arXiv:2312.17507 is the same work as the IEEE RA-M paper with
+      identical authors but a different title and no linking DOI. Left as arXiv,
+      since asserting the identity would be inference.
 - [ ] **Disclose generative-AI assistance.** ICRA 2027 requires it. The figures in
       `figs/` were produced by scripts written with AI assistance, as was much of
       this LaTeX; disclosure goes in the acknowledgements of the camera-ready, not
       the anonymous submission.
-- [ ] Decide the 83 Hz Lite3 policy rate (see `../paper-v2.md`, Appendix C). No
-      public source supports it and the only published figure is ~50 Hz.
-- [ ] §II calls the 6 kHz GO-M8010-6 figure a *commutation* loop; the datasheet
-      says *communication control frequency*. Different things.
+- [x] ~~Decide the 83 Hz Lite3 policy rate.~~ Removed. No public source gave that
+      figure and the only published rate found was ~50 Hz, which contradicts it.
+      The 1 kHz state loop next to it is separately sourced and stays.
+- [x] ~~§II called the 6 kHz figure a *commutation* loop.~~ Reworded to
+      *communication control frequency*, which is the datasheet's own field name.
 - [ ] Run the PaperPlaza PDF compliance checker.
 - [ ] Confirm no identifying content survives (`build_icra.py` does not check this;
       the scan was run manually and was clean).

@@ -177,10 +177,9 @@ targets $q^*$ at frequency $f_{\mathrm{pol}}$. These setpoints cross a
 communication bus to motor-side PD loops running at a substantially higher
 frequency. In Unitree systems, the policy executes at $f_{\mathrm{pol}} = 50$\,Hz
 while low-level commands are written at 500\,Hz~\cite{unitreesdk}; DeepRobotics
-Lite3 platforms deploy policies near 83\,Hz over a 1\,kHz state
-loop~\cite{lite3blog}. Actuator-level commutation loops run even faster, reaching
-6\,kHz on the Unitree GO-M8010-6~\cite{gom8010} and 1\,kHz on the DeepRobotics
-J60~\cite{j60}.
+Lite3 platforms run a 1\,kHz state loop~\cite{lite3blog}. Vendor datasheets place
+the actuator-side communication control frequency higher still: 6\,kHz for the
+Unitree GO-M8010-6~\cite{gom8010} and 1\,kHz for the DeepRobotics J60~\cite{j60}.
 
 \begin{figure*}[!tb]
 \centering
