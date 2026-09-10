@@ -203,7 +203,7 @@ J60~\cite{j60}.
 
 \begin{figure*}[!tb]
 \centering
-\includegraphics[width=\textwidth]{figs/fig1-architecture.pdf}
+\includegraphics[width=0.82\textwidth]{figs/fig1-architecture.pdf}
 \caption{Where the command goes, and where the intervention sits. The policy is
 frozen; the only addition is the dashed block. Two details carry the paper: the
 torque tap feeding the four-band decomposition, and the dashed feedback path. The
@@ -319,7 +319,7 @@ filtered, whereas heavily loaded joints pass through unmodified.
 
 \begin{figure}[!tb]
 \centering
-\includegraphics[width=\columnwidth]{figs/fig5-three-filters.pdf}
+\includegraphics[width=0.95\columnwidth]{figs/fig5-three-filters.pdf}
 \caption{Three ways to smooth a command, and what each one costs. The kernel is
 the same shape throughout; only where it sits in time changes. The causal filter's
 centre of mass sits behind now, and that gap \emph{is} the phase lag. Delaying two
@@ -341,8 +341,8 @@ command power scales inversely with static load (Table~\ref{tab:e1}).
 under single-joint excitation (E1).}
 \label{tab:e1}
 \centering
-\small
-\setlength{\tabcolsep}{3.5pt}
+\footnotesize
+\setlength{\tabcolsep}{3pt}
 \begin{tabular}{lrrrrr}
 \toprule
 Static load & $\rho{=}0.02$ & $0.05$ & $0.10$ & $0.20$ & $0.40$ \\
@@ -359,7 +359,7 @@ $20\Nm$ & 1.00 & 1.00 & 1.01 & \textbf{1.02}  & 1.06 \\
 \ifshowLoadSweep  % off: loses the rho/(1-rho) linearity and its 0.45 percent residual
 \begin{figure*}[!tb]
 \centering
-\includegraphics[width=\textwidth]{figs/e1-rho-sweep.png}
+\includegraphics[width=0.82\textwidth]{figs/e1-rho-sweep.png}
 \caption{Single-joint load sweep (E1). Left: with no load, heat climbs steeply
 with out-of-band command power while the joint's motion does not. Centre: the
 relationship is exactly linear in $\rho/(1-\rho)$, maximum residual 0.45\%. Right:
@@ -388,7 +388,7 @@ dissipation, whereas jitter drives overheating in lightly loaded joints.
 
 \begin{figure}[!tb]
 \centering
-\includegraphics[width=\columnwidth]{figs/fig2-crossover.pdf}
+\includegraphics[width=0.95\columnwidth]{figs/fig2-crossover.pdf}
 \caption{The quadrature crossover. Which term dominates is a property of the
 joint, not of the policy. The curves are the definition
 $r = \mathrm{Var}/(\bar{\tau}^2+\mathrm{Var})$, not a fit; the joint placements and
@@ -408,17 +408,17 @@ $\rho_{>5\,\mathrm{Hz}}$ is the coarse 5\,Hz cut, not the $-3$\,dB-bandwidth
 $\rho$.}
 \label{tab:ablation}
 \centering
-\small
-\setlength{\tabcolsep}{3.5pt}
+\footnotesize
+\setlength{\tabcolsep}{3pt}
 \begin{tabular}{lrrrr}
 \toprule
 Policy variant & $\Delta q_{\mathrm{rms}}$ & $\tau_{\mathrm{step}}$ RMS & Centroid & $\rho_{>5\,\mathrm{Hz}}$ \\
  & (rad) & ($\mathrm{N}\!\cdot\!\mathrm{m}$) & (Hz) & \\
 \midrule
 Full reward           & 0.0668 & 2.34 & 3.29  & 0.051 \\
-No \texttt{action\_rate} & 0.0723 & \textbf{2.53} ({+}8\%) & 3.43 & 0.119 \\
+No \texttt{act\_rate} & 0.0723 & \textbf{2.53} ({+}8\%) & 3.43 & 0.119 \\
 No gait terms         & 0.0747 & 2.62 ({+}12\%) & 4.98 & 0.146 \\
-No torques + energy   & 0.1267 & \textbf{4.43} ({+}89\%) & 5.44 & 0.363 \\
+No torque+energy & 0.1267 & \textbf{4.43} ({+}89\%) & 5.44 & 0.363 \\
 Task terms only       & 0.1586 & 5.55 ({+}137\%) & 10.44 & 0.898 \\
 \bottomrule
 \end{tabular}
@@ -427,7 +427,7 @@ Task terms only       & 0.1586 & 5.55 ({+}137\%) & 10.44 & 0.898 \\
 \ifshowSpectra  % off: loses raw command spectra; Table II carries the numbers
 \begin{figure*}[!tb]
 \centering
-\includegraphics[width=\textwidth]{figs/command-spectrum-annotated.png}
+\includegraphics[width=0.82\textwidth]{figs/command-spectrum-annotated.png}
 \caption{Command spectra across reward ablations. The unregularized policy is flat
 across the whole band. The grey shading is the 15.3\,Hz actuator bandwidth that
 $\rho$ is defined against---\emph{not} the 5--25\,Hz filter-reachable band, which
@@ -451,17 +451,17 @@ demonstrates the apparent efficacy of open-loop smoothing
 \caption{Open-loop command replay through an unloaded joint model (E2).}
 \label{tab:openloop}
 \centering
-\small
-\setlength{\tabcolsep}{3.5pt}
+\footnotesize
+\setlength{\tabcolsep}{3pt}
 \begin{tabular}{lrrc}
 \toprule
-Filtering scheme & $\mathcal{H}/\mathcal{H}_{\mathrm{ZOH}}$ & Preserved motion & Deployable \\
+Scheme & $\mathcal{H}/\mathcal{H}_{\mathrm{ZOH}}$ & Motion & Depl. \\
 \midrule
 Baseline ZOH                    & 1.000 & 1.000 & --- \\
 Linear interpolation            & 0.696 & 0.819 & Yes \\
-Causal Butterworth (12\,Hz)     & 0.588 & 0.745 & Yes \\
+Causal Butter. (12\,Hz)     & 0.588 & 0.745 & Yes \\
 Predictive filter               & \textbf{0.428} & 0.741 & Yes \\
-Zero-phase Butterworth (12\,Hz) & 0.540 & \textbf{0.995} & No \\
+Zero-phase Butter. (12\,Hz) & 0.540 & \textbf{0.995} & No \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -469,7 +469,7 @@ Zero-phase Butterworth (12\,Hz) & 0.540 & \textbf{0.995} & No \\
 \ifshowOpenLoopSweep  % off: loses raw open-loop sweep; Table III carries the numbers
 \begin{figure*}[!tb]
 \centering
-\includegraphics[width=\textwidth]{figs/e3-command-filters.png}
+\includegraphics[width=0.82\textwidth]{figs/e3-command-filters.png}
 \caption{Open-loop filter sweep (E2). Up and to the left is better. The zero-phase
 curve dominates the causal one at every cutoff, and the gap between them is phase
 lag alone. At $10\Nm$ of steady load the whole picture collapses to a vertical
@@ -497,8 +497,8 @@ baseline Go1 policy (E5). The four components sum to 255.9 against an
 independently computed heat proxy of 256.2.}
 \label{tab:bands}
 \centering
-\small
-\setlength{\tabcolsep}{3.5pt}
+\footnotesize
+\setlength{\tabcolsep}{3pt}
 \begin{tabular}{llr}
 \toprule
 Band & Physical mechanism & Share \\
@@ -526,8 +526,8 @@ actuators reach 33--45\%, while weight-bearing calf actuators remain confined to
 sum of the 5--25\,Hz and $>25$\,Hz columns.}
 \label{tab:joints}
 \centering
-\small
-\setlength{\tabcolsep}{3.5pt}
+\footnotesize
+\setlength{\tabcolsep}{3pt}
 \begin{tabular}{lrrrrrr}
 \toprule
 Joint & $|\bar{\tau}|$ & DC & Gait & 5--25 & $>25$ & Reach. \\
@@ -543,7 +543,7 @@ Calves  & 5.9--6.9 & 32--38\% & 45--54\% & 13--16\% & 1.1--1.6\% & \textbf{14--1
 
 \begin{figure*}[!tb]
 \centering
-\includegraphics[width=\textwidth]{figs/fig3-band-budget.pdf}
+\includegraphics[width=0.82\textwidth]{figs/fig3-band-budget.pdf}
 \caption{The heat budget, both policies. The $>25$\,Hz sliver is drawn to scale:
 that is what 1.6\% looks like. Removing the effort reward terms moves 25
 percentage points of heat into the band a filter can reach, and the filter returns
@@ -561,22 +561,22 @@ evaporate due to phase lag (Table~\ref{tab:closedloop}).
 Cliff's $\delta$ is reported against ZOH.}
 \label{tab:closedloop}
 \centering
-\small
-\setlength{\tabcolsep}{3.5pt}
+\footnotesize
+\setlength{\tabcolsep}{3pt}
 \begin{tabular}{lrrrrr}
 \toprule
 Scheme & $\mathcal{H}/\mathcal{H}_{\mathrm{ZOH}}$ & Track. & $\delta(H)$ & $\delta(v)$ & Fall \\
 \midrule
 Baseline ZOH              & 1.000 & 1.000 & 0.00 & 0.00 & 0.00 \\
 Linear interpolation      & 0.956 & 1.048 & $-0.31$ & 0.13 & 0.00 \\
-Butterworth (5\,Hz)       & 1.098 & 2.594 & $-0.04$ & 1.00 & \textbf{0.23} \\
-Butterworth (8\,Hz)       & 0.946 & 1.444 & $-0.28$ & 0.93 & 0.00 \\
-Butterworth (12\,Hz)      & 0.935 & 1.160 & $-0.28$ & 0.52 & 0.00 \\
-Butterworth (12\,Hz) + lin. & 0.942 & 1.284 & $-0.26$ & 0.75 & 0.00 \\
-Zero-phase, 40\,ms delay  & \textbf{1.082} & 2.493 & $-0.03$ & 1.00 & \textbf{0.07} \\
+Butterworth (5\,Hz) & 1.098 & 2.594 & $-0.04$ & 1.00 & \textbf{0.23} \\
+Butterworth (8\,Hz) & 0.946 & 1.444 & $-0.28$ & 0.93 & 0.00 \\
+Butterworth (12\,Hz) & 0.935 & 1.160 & $-0.28$ & 0.52 & 0.00 \\
+Butter. 12\,Hz + lin. & 0.942 & 1.284 & $-0.26$ & 0.75 & 0.00 \\
+Zero-phase, 40\,ms & \textbf{1.082} & 2.493 & $-0.03$ & 1.00 & \textbf{0.07} \\
 Predictive filter         & \textbf{0.915} & 1.279 & $-0.33$ & 0.71 & 0.00 \\
 Predictive + joint gate   & 0.940 & 1.157 & $-0.33$ & 0.50 & 0.00 \\
-Predictive, policy-unaware & 0.927 & 1.236 & $-0.33$ & 0.64 & 0.00 \\
+Predictive, policy-unaw. & 0.927 & 1.236 & $-0.33$ & 0.64 & 0.00 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -584,7 +584,7 @@ Predictive, policy-unaware & 0.927 & 1.236 & $-0.33$ & 0.64 & 0.00 \\
 \ifshowClosedLoopScatter  % off: loses the heat-vs-tracking trade-off and which joints the gate touches
 \begin{figure*}[!tb]
 \centering
-\includegraphics[width=\textwidth]{figs/e4-closed-loop.png}
+\includegraphics[width=0.82\textwidth]{figs/e4-closed-loop.png}
 \caption{Closed loop, full-reward policy (E3). Heat against tracking error with
 the filter inside the loop. Right panel: which joints the gate lets the filter
 touch. The four calves sit above the $3.2\Nm$ line and pass through untouched.}
@@ -605,8 +605,8 @@ untouched and attains the lowest total heat.
 \caption{Actuator dissipation above Nyquist compared to total thermal load.}
 \label{tab:nyquist}
 \centering
-\small
-\setlength{\tabcolsep}{3.5pt}
+\footnotesize
+\setlength{\tabcolsep}{3pt}
 \begin{tabular}{lrr}
 \toprule
 Scheme & $>25$\,Hz term & Total $\mathcal{H}/\mathcal{H}_0$ \\
@@ -627,8 +627,8 @@ Predictive filter        & 4.02 & \textbf{0.915} \\
 $\mathcal{H}/\mathcal{H}_0$ (fall rate) (E3).}
 \label{tab:velocity}
 \centering
-\small
-\setlength{\tabcolsep}{3.5pt}
+\footnotesize
+\setlength{\tabcolsep}{3pt}
 \begin{tabular}{lrrr}
 \toprule
 Scheme & 0.5\,m/s & 1.0\,m/s & 0.3\,m/s + turn \\
@@ -644,7 +644,7 @@ Predictive + gate, track. & 1.298 & 0.995 & 1.250 \\
 
 \begin{figure*}[!tb]
 \centering
-\includegraphics[width=\textwidth]{figs/fig4-latency-backfire.pdf}
+\includegraphics[width=0.82\textwidth]{figs/fig4-latency-backfire.pdf}
 \caption{Latency backfires, and only at speed. The same delayed filter is the best
 scheme tested at 0.5\,m/s and falls in a fifth of episodes at 1.0\,m/s. Bars above
 the ZOH baseline are worse than doing nothing. This argues against evaluating a
@@ -670,22 +670,22 @@ torque or energy penalties, demonstrates consistent budget recovery
 $R^2$ row is the closed-loop fit; the open-loop fit is a different quantity.}
 \label{tab:policies}
 \centering
-\small
-\setlength{\tabcolsep}{3.5pt}
+\footnotesize
+\setlength{\tabcolsep}{3pt}
 \begin{tabular}{lrr}
 \toprule
-Metric & Full reward & No effort terms \\
+Metric & Full reward & No effort \\
 \midrule
 Baseline ZOH heat & 255.9 & \textbf{376.3} ({+}47\%) \\
-DC / gait / 5--25 / $>$25 (\%) & 31.3/50.6/16.5/1.6 & 27.0/29.7/40.7/2.6 \\
+Bands DC/gait/5--25/$>$25 & 31.3/50.6/16.5/1.6 & 27.0/29.7/40.7/2.6 \\
 Filter-reachable share & \textbf{18.1\%} & \textbf{43.3\%} \\
 Command predictor $R^2$ & 0.609 & 0.402 \\
 Predictive $\mathcal{H}/\mathcal{H}_0$ & 0.915 & \textbf{0.765} \\
 Recovered / reachable & \textbf{47\%} & \textbf{54\%} \\
-Predictive + gate $\mathcal{H}/\mathcal{H}_0$ & 0.940 & 0.879 \\
-Predictive + gate tracking & 1.157 & 1.149 \\
-Zero-phase delay $\mathcal{H}/\mathcal{H}_0$ & 1.082 & 1.053 \\
-Zero-phase delay fall rate & 0.07 & \textbf{0.37} \\
+Pred.\ + gate $\mathcal{H}/\mathcal{H}_0$ & 0.940 & 0.879 \\
+Pred.\ + gate tracking & 1.157 & 1.149 \\
+Zero-phase $\mathcal{H}/\mathcal{H}_0$ & 1.082 & 1.053 \\
+Zero-phase fall rate & 0.07 & \textbf{0.37} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -693,7 +693,7 @@ Zero-phase delay fall rate & 0.07 & \textbf{0.37} \\
 \ifshowSecondPolicyScatter  % off: loses second-policy scatter; Table IX carries the numbers
 \begin{figure*}[!tb]
 \centering
-\includegraphics[width=\textwidth]{figs/e4-closed-loop-no-torques-energy.png}
+\includegraphics[width=0.82\textwidth]{figs/e4-closed-loop-no-torques-energy.png}
 \caption{Closed loop, effort terms removed. The same matrix on the wasteful
 policy. The predictive filter moves much further left; the delayed filter moves
 off the chart to the right.}
