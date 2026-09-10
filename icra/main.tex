@@ -315,6 +315,10 @@ fixed per-joint mask, not a runtime threshold: $|\bar{\tau}|$ is measured once
 per joint on the same baseline rollouts that fit the predictor and then held
 constant, so nothing is recomputed online and the gate cannot chatter. A reactive
 variant keyed to instantaneous torque is a natural extension, not evaluated here.
+Calibration uses six rollouts drawn from a seed family disjoint from the thirty
+evaluation episodes, and is collected under unfiltered ZOH, so neither the
+predictor weights nor the gate mask has seen an evaluated or a filtered
+trajectory.
 
 \ifshowFilterSchematic  % off: loses the kernel-placement schematic; the three schemes are described in the text
 \begin{figure}[!tb]
@@ -513,6 +517,9 @@ Out-of-sample \emph{open-loop} command prediction accuracy reaches $R^2 = 0.679$
 on the full-reward policy, declining to 0.385 without effort terms, and collapsing
 to 0.059 on an unregularized checkpoint. A separate predictor fitted for the
 closed-loop experiments reports different values\ifshowPolicyTable\ (Table~\ref{tab:policies})\fi.
+Both figures are strict temporal hold-outs: the open-loop fit is scored on the
+held-out second half of the rollout, the closed-loop fit on the held-out final
+30\% of the calibration data.
 
 \subsection{Spectral Allocation of the Thermal Budget}
 
