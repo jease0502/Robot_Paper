@@ -78,7 +78,7 @@ Locomotion: Posture, Ripple, and Closed-Loop Filtering Limits}
 % Names, affiliations, identifying links and acknowledgements must be absent from
 % the submitted PDF; ICRA 2027 states violations can be desk rejected.
 \ifanonymous
-  \author{Anonymous submission --- paper ID \pending}
+  \author{Anonymous submission}
 \else
   \author{\pending \thanks{\pending}}
 \fi
@@ -267,8 +267,7 @@ assumption~\cite{cliff}.
 
 \section{Experimental Setup}
 
-Four experimental protocols are evaluated. The labels follow the source
-experiments; there is no E4, as the label was never assigned. The checkpoints and
+Four experimental protocols are evaluated. The checkpoints and
 the reward-term vocabulary the ablations manipulate follow the massively parallel
 GPU training practice of \texttt{legged\_gym}~\cite{rudin} on Isaac
 Gym~\cite{isaacgym} and the open sim-to-real stacks published for the
@@ -293,7 +292,7 @@ step, with the candidate filtering pipeline active inside the feedback loop. Ten
 1.0\,m/s, and 0.3\,m/s with yaw rate) across matched seeds and observation noise,
 giving $n = 30$ per scheme.
 
-\textbf{E5 (spectral decomposition).} Identical to E3 under baseline ZOH over 30
+\textbf{E4 (spectral decomposition).} Identical to E3 under baseline ZOH over 30
 rollouts. Mean torque per policy step is recorded at 50\,Hz, with spectral cuts at
 5\,Hz and 25\,Hz, and intra-step variance supplying the $>25$\,Hz component.
 
@@ -387,8 +386,8 @@ reachable shares are measured.}
 \subsection{Effort Terms Govern Jitter; Action Rate Does Not}
 
 Command-side statistics were evaluated across ablated Go1 policy checkpoints
-(single-seed, 8\,s rollouts). Table~\ref{tab:ablation} reports five representative
-variants of the seven trained; statistics for the remaining two are \pending.
+(single-seed, 8\,s rollouts). Of the seven variants trained,
+Table~\ref{tab:ablation} reports the five most representative.
 
 \begin{table}[!tb]
 \caption{Command-side spectral properties across reward ablations (E2).
@@ -486,7 +485,7 @@ ceiling for command filtering\ifshowBandTable (Table~\ref{tab:bands})\fi.
 \ifshowBandTable  % off: loses the four-band table; the same split is in Fig. 3 and in Table 5
 \begin{table}[!tb]
 \caption{Exact closed-loop torque spectral decomposition across 30 rollouts on the
-baseline Go1 policy (E5). The four components sum to 255.9 against an
+baseline Go1 policy (E4). The four components sum to 255.9 against an
 independently computed heat proxy of 256.2.}
 \label{tab:bands}
 \centering
@@ -516,7 +515,7 @@ actuators reach 33--45\%, while weight-bearing calf actuators remain confined to
 
 \ifshowJointTable  % off: loses per-joint-family reachable shares, which the abstract quotes
 \begin{table}[!tb]
-\caption{Joint-specific torque budget decomposition (E5). Reachable share is the
+\caption{Joint-specific torque budget decomposition (E4). Reachable share is the
 sum of the 5--25\,Hz and $>25$\,Hz columns.}
 \label{tab:joints}
 \centering
@@ -555,7 +554,8 @@ phase margin.
 
 \begin{table}[!tb]
 \caption{Full-body closed-loop locomotion performance ($n = 30$ per scheme, E3).
-Cliff's $\delta$ is reported against ZOH.}
+Cliff's $\delta$ is reported against ZOH. Track.\ is commanded-velocity
+tracking error normalised to the ZOH baseline; larger is worse.}
 \label{tab:closedloop}
 \centering
 \footnotesize
@@ -667,7 +667,7 @@ torque or energy penalties, demonstrates consistent budget recovery
 (Table~\ref{tab:policies}).
 
 \begin{table}[!tb]
-\caption{Regularized against effort-ablated policies (E3, E5). The predictor
+\caption{Regularized against effort-ablated policies (E3, E4). The predictor
 $R^2$ row is the closed-loop fit; the open-loop fit is a different quantity.}
 \label{tab:policies}
 \centering
