@@ -10,7 +10,13 @@ latexmk -pdf main.tex     # build only, if figures are already staged
 ```
 
 Current build: **8 pages**, US Letter, clean compile. Zero errors, zero overfull
-boxes, zero undefined references.
+boxes, zero undefined references. **PaperPlaza PDF compliance: passed** under the
+ICRA 2027 profile, 2026-09-10.
+
+Local checks matching PaperPlaza's own report fields: 19/19 fonts embedded and
+subsetted, zero Type 3 fonts, no encryption, no annotations, forms, JavaScript or
+embedded files, no self-added page numbers, no raster images, and a tightest
+margin of 0.97 in against a 0.75 in requirement.
 
 ---
 
@@ -109,7 +115,9 @@ sheared the "Deployable" column off Table III; `\small` and a smaller
 
 ## Before submitting
 
-- [ ] **Re-verify the venue rules.** They changed between ICRA 2025 and 2027.
+- [x] ~~**Re-verify the venue rules.**~~ The PaperPlaza checker passed under the
+      ICRA 2027 profile, which validates page count, paper size and margins
+      against the conference's own settings.
 - [x] ~~Get under 8 pages.~~ Done: 8 pages, verified by rebuild.
 - [x] ~~Fill the `\pending` markers.~~ None render in the PDF. The three left in
       the source are the macro definition, the inactive non-anonymous author
@@ -130,9 +138,13 @@ sheared the "Deployable" column off Table III; `\small` and a smaller
       The 1 kHz state loop next to it is separately sourced and stays.
 - [x] ~~§II called the 6 kHz figure a *commutation* loop.~~ Reworded to
       *communication control frequency*, which is the datasheet's own field name.
-- [ ] Run the PaperPlaza PDF compliance checker.
-- [ ] Confirm no identifying content survives (`build_icra.py` does not check this;
-      the scan was run manually and was clean).
+- [x] ~~Run the PaperPlaza PDF compliance checker.~~ Passed, 2026-09-10, against
+      the ICRA 2027 profile. That also confirms the 8-page limit independently:
+      the checker validates page count against the conference's own configuration,
+      not against anything read off the CFP.
+- [x] ~~Confirm no identifying content survives.~~ Scanned: no names, affiliations,
+      thanks, funders or identifying links. `build_icra.py` does not check this, so
+      re-scan if the author block or acknowledgment is edited.
 
 ## Files
 
