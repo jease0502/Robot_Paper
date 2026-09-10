@@ -115,13 +115,16 @@ sheared the "Deployable" column off Table III; `\small` and a smaller
       the source are the macro definition, the inactive non-anonymous author
       branch, and the English word "pending" in a sentence about delayed MDPs.
 - [ ] At submission, put the PaperPlaza-assigned paper ID back in the author block.
-- [ ] Decide whether arXiv:2312.17507 is the same work as the IEEE RA-M paper with
-      identical authors but a different title and no linking DOI. Left as arXiv,
-      since asserting the identity would be inference.
-- [ ] **Disclose generative-AI assistance.** ICRA 2027 requires it. The figures in
-      `figs/` were produced by scripts written with AI assistance, as was much of
-      this LaTeX; disclosure goes in the acknowledgements of the camera-ready, not
-      the anonymous submission.
+- [x] ~~Decide whether arXiv:2312.17507 is the IEEE RA-M paper.~~ The author
+      confirmed they are the same work; the entry now cites IEEE Robot. Autom.
+      Mag., vol. 32, no. 2, pp. 49-59, 2025 (DOI 10.1109/mra.2024.3487322).
+- [x] ~~**Disclose generative-AI assistance.**~~ Done, in an Acknowledgment
+      section that is in the anonymous submission. The two rules do not actually
+      conflict: ICRA 2027 says AI content "must be disclosed in the
+      acknowledgments section", while the RAS double-anonymous rule withholds only
+      acknowledgments "to people or funding agencies". A disclosure naming neither
+      satisfies both. **Check the wording matches what you actually used AI for**
+      before submitting, and add the human acknowledgments after acceptance.
 - [x] ~~Decide the 83 Hz Lite3 policy rate.~~ Removed. No public source gave that
       figure and the only published rate found was ~50 Hz, which contradicts it.
       The 1 kHz state loop next to it is separately sourced and stays.
