@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Assemble the reading page from the template, the hand-authored SVGs and the pic/ PNGs.
+"""Assemble the paper page from the template, the generated SVGs and the pic/ PNGs.
 
 Two outputs from one template:
 
@@ -10,8 +10,15 @@ Two outputs from one template:
                     without them the page renders in quirks mode and has no
                     viewport meta, so mobile layout breaks.
 
-SVGs are inlined so they inherit the page's theme colours; PNGs are embedded as
-data: URIs because the Artifact CSP blocks external images.
+The page is light-only by design: it is typeset as a paper, and a paper has one
+appearance. Nothing here emits a dark palette and the wrapper pins
+color-scheme:light so the host cannot impose one.
+
+SVGs are inlined (they are vector line art and stay crisp at any width); PNGs are
+embedded as data: URIs because the Artifact CSP blocks external images.
+
+Figures are numbered sequentially in document order by this script, not by hand,
+so inserting one does not desynchronise the rest.
 """
 import base64
 import pathlib
@@ -20,6 +27,7 @@ import sys
 
 ROOT = pathlib.Path(__file__).parent
 TMPL = ROOT / "paper-page.html.tmpl"
+REFS = ROOT / "references-60.html"
 OUT_FRAGMENT = ROOT / "paper-page.html"
 OUT_STANDALONE = ROOT / "index.html"
 
@@ -29,10 +37,10 @@ HEAD = """<!doctype html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="color-scheme" content="light dark">
+<meta name="color-scheme" content="light">
 <meta name="robots" content="noindex, nofollow">
 <style>
-html{color-scheme:light dark}
+html{color-scheme:light}
 body{margin:0;font-family:ui-sans-serif,system-ui,sans-serif}
 img{max-width:100%}
 [hidden]{display:none!important}
@@ -43,91 +51,105 @@ img{max-width:100%}
 FOOT = "\n</body>\n</html>\n"
 
 
-def figure(body: str, label: str, caption: str) -> str:
+def _figure(body: str, number: int, caption: str) -> str:
     return (
-        '<figure>\n<div class="fbox">\n' + body + "\n</div>\n"
-        f"<figcaption><b>{label}</b>{caption}</figcaption>\n</figure>"
+        f'<figure id="fig{number}">\n<div class="fbox">\n' + body + "\n</div>\n"
+        f"<figcaption><b>Fig. {number}.</b> {caption}</figcaption>\n</figure>"
     )
 
 
-def svg_fig(name: str, label: str, caption: str) -> str:
+def _svg(name: str) -> str:
     src = (ROOT / "fig" / name).read_text(encoding="utf-8")
     src = re.sub(r"^<\?xml[^>]*\?>\s*", "", src).strip()
-    # let CSS drive the size
-    src = re.sub(r'\s(width|height)="\d+"', "", src, count=2)
-    return figure(src, label, caption)
+    src = re.sub(r"<!DOCTYPE[^>]*>\s*", "", src, flags=re.I).strip()
+    # Let CSS drive the size. matplotlib writes width="460.8pt", the old
+    # hand-authored files wrote width="900" -- strip either form, but only on the
+    # root <svg> tag, and only when a viewBox is there to size it instead.
+    root_end = src.find(">") + 1
+    root, rest = src[:root_end], src[root_end:]
+    if "viewBox" not in root:
+        raise SystemExit(f"error: fig/{name} has no viewBox; cannot size it with CSS")
+    root = re.sub(r'\s(?:width|height)="[^"]*"', "", root)
+    return root + rest
 
 
-def png_fig(name: str, label: str, caption: str) -> str:
+def _png(name: str, caption: str) -> str:
     data = (ROOT / "pic" / name).read_bytes()
     b64 = base64.b64encode(data).decode("ascii")
     alt = re.sub(r"<[^>]+>", "", caption)[:180]
-    img = f'<img alt="{alt}" src="data:image/png;base64,{b64}">'
-    return figure(img, label, caption)
+    return f'<img alt="{alt}" src="data:image/png;base64,{b64}">'
 
 
+# Placeholder -> (kind, filename, caption). Figure numbers are assigned below in
+# the order the placeholders appear in the template.
 FIGS = {
-    "FIG1": svg_fig(
+    "FIG1": (
+        "svg",
         "fig1-architecture.svg",
-        "Figure 1 — system architecture",
-        "Where the command goes, and where the intervention sits. The policy is frozen; the only thing "
-        "added is the dashed block. Two details carry the paper: the torque tap feeding the four-band "
-        "decomposition, and the dashed feedback path — the policy is itself a feedback controller, so "
-        "latency spent inside that loop is subtracted from its stability margin.",
+        "Where the command goes, and where the intervention sits. The policy is frozen; the only "
+        "addition is the dashed block. Two details carry the paper: the torque tap feeding the "
+        "four-band decomposition, and the dashed feedback path. The policy is itself a feedback "
+        "controller, so latency spent inside that loop is subtracted from its stability margin.",
     ),
-    "FIG2": svg_fig(
-        "fig2-crossover.svg",
-        "Figure 2 — the quadrature crossover",
-        "Because the two terms add in quadrature, which one dominates is a property of the joint, not of "
-        "the policy. The curves are the definition r = Var/(τ̄²+Var), not a fit; the joint placements and "
-        "the reachable shares are measured. Eight of Go1's twelve joints sit left of the line.",
-    ),
-    "FIG3": svg_fig(
-        "fig3-band-budget.svg",
-        "Figure 3 — the heat budget, two policies",
-        "The &gt; 25 Hz sliver is drawn to scale: that is what 1.6% looks like. Removing the effort reward "
-        "terms moves 25 percentage points of heat into the band a filter can reach — and the filter returns "
-        "about half of whatever is there, on both policies.",
-    ),
-    "FIG4": svg_fig(
-        "fig4-latency-backfire.svg",
-        "Figure 4 — latency backfires, and only at speed",
-        "The same delayed filter is the best scheme tested at 0.5 m/s and falls in a fifth of episodes at "
-        "1.0 m/s. Bars above the ZOH baseline are worse than doing nothing. This is the figure that argues "
-        "against evaluating a smoothing filter at the bottom of the speed range.",
-    ),
-    "FIG_E1": png_fig(
+    "FIG_E1": (
+        "png",
         "e1-rho-sweep.png",
-        "Figure E1 — single-joint load sweep",
-        "Left: with no load, heat climbs steeply with out-of-band command power while the joint's motion "
-        "does not. Middle: the relationship is exactly linear in ρ/(1−ρ), max residual 0.45%. Right: a "
-        "realistic steady load flattens it almost completely.",
+        "Single-joint load sweep (E1). Left: with no load, heat climbs steeply with out-of-band "
+        "command power while the joint's motion does not. Centre: the relationship is exactly linear "
+        "in &rho;/(1&minus;&rho;), maximum residual 0.45%. Right: a realistic steady load flattens it "
+        "almost completely.",
     ),
-    "FIG_SPEC": png_fig(
+    "FIG2": (
+        "svg",
+        "fig2-crossover.svg",
+        "The quadrature crossover. Because the two terms add in quadrature, which one dominates is a "
+        "property of the joint, not of the policy. The curves are the definition "
+        "r = Var(&tau;)/(&tau;&#772;&sup2; + Var(&tau;)), not a fit; the joint placements and the "
+        "reachable shares are measured. Eight of the Go1's twelve joints sit left of the line.",
+    ),
+    "FIG_SPEC": (
+        "png",
         "command-spectrum.png",
-        "Figure E2 — command spectra across reward ablations",
-        "Left: command power spectra; the unregularized policy is flat across the whole band. Right: the "
-        "joint's closed-loop response. Note the shaded region here is the 15.3 Hz actuator bandwidth, not "
-        "the 5–25 Hz band the decomposition uses — worth reconciling before submission.",
+        "Command spectra across reward ablations. Left: command power spectra; the unregularized "
+        "policy is flat across the whole band. Right: the joint's closed-loop response. The shaded "
+        "region is the 15.3 Hz actuator bandwidth of Section 3.2, <em>not</em> the 5&ndash;25 Hz band "
+        "the decomposition uses; the two are distinguished in the text and this panel predates that "
+        "distinction.",
     ),
-    "FIG_E3": png_fig(
+    "FIG_E3": (
+        "png",
         "e3-command-filters.png",
-        "Figure E3 — open-loop filter sweep",
-        "Up and to the left is better. The zero-phase curve dominates the causal one at every cutoff, and "
-        "the gap between them is phase lag alone. At 10 N·m of steady load the whole picture collapses to a "
-        "vertical line: there is nothing to win.",
+        "Open-loop filter sweep (E2). Up and to the left is better. The zero-phase curve dominates the "
+        "causal one at every cutoff, and the gap between them is phase lag alone. At 10 N&middot;m of "
+        "steady load the whole picture collapses to a vertical line: there is nothing to win.",
     ),
-    "FIG_E4": png_fig(
+    "FIG3": (
+        "svg",
+        "fig3-band-budget.svg",
+        "The heat budget, both policies. The &gt; 25 Hz sliver is drawn to scale: that is what 1.6% "
+        "looks like. Removing the effort reward terms moves 25 percentage points of heat into the band "
+        "a filter can reach, and the filter returns about half of whatever is there on either policy.",
+    ),
+    "FIG_E4": (
+        "png",
         "e4-closed-loop.png",
-        "Figure E4 — closed loop, full-reward policy",
-        "Heat against tracking error with the filter inside the loop. Right panel: which joints the gate "
-        "lets the filter touch — the four calves sit above the 3.2 N·m line and are passed through untouched.",
+        "Closed loop, full-reward policy (E3). Heat against tracking error with the filter inside the "
+        "loop. Right panel: which joints the gate lets the filter touch. The four calves sit above the "
+        "3.2 N&middot;m line and pass through untouched.",
     ),
-    "FIG_E4B": png_fig(
+    "FIG4": (
+        "svg",
+        "fig4-latency-backfire.svg",
+        "Latency backfires, and only at speed. The same delayed filter is the best scheme tested at "
+        "0.5 m/s and falls in a fifth of episodes at 1.0 m/s. Bars above the ZOH baseline are worse "
+        "than doing nothing. This is the figure that argues against evaluating a smoothing filter at "
+        "the bottom of the speed range.",
+    ),
+    "FIG_E4B": (
+        "png",
         "e4-closed-loop-no-torques-energy.png",
-        "Figure E5 — closed loop, effort terms removed",
-        "The same matrix on the wasteful policy. The predictive filter moves much further left; the delayed "
-        "filter moves off the chart to the right.",
+        "Closed loop, effort terms removed. The same matrix on the wasteful policy. The predictive "
+        "filter moves much further left; the delayed filter moves off the chart to the right.",
     ),
 }
 
@@ -135,9 +157,9 @@ FIGS = {
 def standalone(fragment: str) -> str:
     """Wrap the fragment as a full document, hoisting its title/link/style into <head>.
 
-    The template opens with <title>, the font <link> and the page <style>; those are
-    head content that the Artifact host tolerates inline. A real document should carry
-    them in <head>, so split at the first </style> and move that prologue up.
+    The template opens with <title>, the font <link>s and the page <style>; those
+    are head content the Artifact host tolerates inline. A real document should
+    carry them in <head>, so split at the first </style> and move that prologue up.
     """
     marker = "</style>"
     idx = fragment.find(marker)
@@ -149,21 +171,43 @@ def standalone(fragment: str) -> str:
 
 def main() -> int:
     html = TMPL.read_text(encoding="utf-8")
-    for key, block in FIGS.items():
-        token = "{{" + key + "}}"
-        if token not in html:
-            print(f"warning: {token} not found in template", file=sys.stderr)
-            continue
-        html = html.replace(token, block)
+
+    if "{{REFS}}" not in html:
+        print("error: {{REFS}} not found in template", file=sys.stderr)
+        return 1
+    html = html.replace("{{REFS}}", REFS.read_text(encoding="utf-8").rstrip("\n"))
+
+    # Number the figures in the order their placeholders appear in the template.
+    order = [
+        m.group(1)
+        for m in re.finditer(r"\{\{(FIG[A-Z_0-9]*)\}\}", html)
+    ]
+    missing = [k for k in FIGS if k not in order]
+    if missing:
+        print(f"warning: defined but unused: {sorted(missing)}", file=sys.stderr)
+
+    for number, key in enumerate(order, start=1):
+        if key not in FIGS:
+            print(f"error: {{{{{key}}}}} in template has no definition", file=sys.stderr)
+            return 1
+        kind, name, caption = FIGS[key]
+        body = _svg(name) if kind == "svg" else _png(name, caption)
+        html = html.replace("{{" + key + "}}", _figure(body, number, caption), 1)
+
     leftover = re.findall(r"\{\{[A-Z_0-9]+\}\}", html)
     if leftover:
         print(f"error: unsubstituted placeholders {leftover}", file=sys.stderr)
+        return 1
+
+    if re.search(r"prefers-color-scheme\s*:\s*dark", html):
+        print("error: a dark-mode block survived; this page is light-only", file=sys.stderr)
         return 1
 
     OUT_FRAGMENT.write_text(html, encoding="utf-8")
     OUT_STANDALONE.write_text(standalone(html), encoding="utf-8")
     for p in (OUT_FRAGMENT, OUT_STANDALONE):
         print(f"wrote {p.name:<20} ({p.stat().st_size/1024:.0f} KB)")
+    print(f"figures numbered 1..{len(order)} in document order")
     return 0
 
 

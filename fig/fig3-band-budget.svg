@@ -1,74 +1,401 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 940 430" width="940" height="430" role="img" aria-label="四頻段熱預算：良好正則化的 policy 中，姿態佔 31.3%、步態帶佔 50.6%、5 到 25 赫茲的帶內抖動佔 16.5%、零階保持諧波僅佔 1.6%，濾波器可觸及共 18.1%；移除 effort 獎勵項後可觸及份額升至 43.3%，而零階保持諧波仍只有 2.6%。" font-family="ui-sans-serif, system-ui, -apple-system, 'Noto Sans TC', sans-serif">
-
-  <text x="40" y="30" font-size="15" font-weight="600" fill="currentColor">大家指著的 ZOH 階梯只佔 1.6% —— 浪費其實在 5–25 Hz</text>
-
-  <!-- legend -->
-  <g font-size="11.5" fill="currentColor">
-    <rect x="40" y="48" width="13" height="13" fill="currentColor" opacity="0.16"/><text x="59" y="59">DC 姿態</text>
-    <rect x="140" y="48" width="13" height="13" fill="currentColor" opacity="0.30"/><text x="159" y="59">0–5 Hz 步態</text>
-    <rect x="258" y="48" width="13" height="13" fill="var(--sig, #1F6F8B)" opacity="0.85"/><text x="277" y="59">5–25 Hz in-band jitter</text>
-    <rect x="428" y="48" width="13" height="13" fill="var(--heat, #C4351F)"/><text x="447" y="59">&gt; 25 Hz ZOH 諧波</text>
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+  "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg xmlns:xlink="http://www.w3.org/1999/xlink" width="510.23622pt" height="219.6pt" viewBox="0 0 510.23622 219.6" xmlns="http://www.w3.org/2000/svg" version="1.1">
+ <metadata>
+  <rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+   <cc:Work>
+    <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
+    <dc:date>2026-09-10T11:14:08.338690</dc:date>
+    <dc:format>image/svg+xml</dc:format>
+    <dc:creator>
+     <cc:Agent>
+      <dc:title>Matplotlib v3.11.0, https://matplotlib.org/</dc:title>
+     </cc:Agent>
+    </dc:creator>
+   </cc:Work>
+  </rdf:RDF>
+ </metadata>
+ <defs>
+  <style type="text/css">*{stroke-linejoin: round; stroke-linecap: butt}</style>
+ </defs>
+ <g id="figure_1">
+  <g id="patch_1">
+   <path d="M 0 219.6 
+L 510.23622 219.6 
+L 510.23622 0 
+L 0 0 
+z
+" style="fill: #ffffff"/>
   </g>
-  <text x="588" y="59" font-size="11.5" fill="currentColor" opacity="0.7">後兩者之和 = 濾波器可觸及的全部預算</text>
-
-  <!-- ================= bar A ================= -->
-  <text x="40" y="98" font-size="13" font-weight="600" fill="currentColor">full reward</text>
-  <text x="40" y="116" font-size="11.5" fill="currentColor" opacity="0.75">ZOH 熱 255.9</text>
-
-  <rect x="160" y="86" width="187.8" height="54" fill="currentColor" opacity="0.16"/>
-  <rect x="347.8" y="86" width="303.6" height="54" fill="currentColor" opacity="0.30"/>
-  <rect x="651.4" y="86" width="99" height="54" fill="var(--sig, #1F6F8B)" opacity="0.85"/>
-  <rect x="750.4" y="86" width="9.6" height="54" fill="var(--heat, #C4351F)"/>
-  <rect x="160" y="86" width="600" height="54" fill="none" stroke="currentColor" stroke-width="1.4"/>
-
-  <text x="253.9" y="118" text-anchor="middle" font-size="12.5" font-weight="600" fill="currentColor">31.3%</text>
-  <text x="499.6" y="118" text-anchor="middle" font-size="12.5" font-weight="600" fill="currentColor">50.6%</text>
-  <text x="700.9" y="118" text-anchor="middle" font-size="12.5" font-weight="600" fill="currentColor">16.5%</text>
-
-  <path d="M755 86 L755 68 L800 68" fill="none" stroke="var(--heat, #C4351F)" stroke-width="1.2"/>
-  <text x="806" y="72" font-size="12" font-weight="600" fill="var(--heat, #C4351F)">1.6%</text>
-
-  <path d="M651.4 146 L651.4 156 L760 156 L760 146" fill="none" stroke="currentColor" stroke-width="1.3"/>
-  <text x="705.7" y="174" text-anchor="middle" font-size="13" font-weight="700" fill="currentColor">可觸及 18.1%</text>
-
-  <!-- ================= bar B ================= -->
-  <text x="40" y="238" font-size="13" font-weight="600" fill="currentColor">no torques + energy</text>
-  <text x="40" y="256" font-size="11.5" fill="currentColor" opacity="0.75">ZOH 熱 376.3 (+47%)</text>
-
-  <rect x="160" y="226" width="162" height="54" fill="currentColor" opacity="0.16"/>
-  <rect x="322" y="226" width="178.2" height="54" fill="currentColor" opacity="0.30"/>
-  <rect x="500.2" y="226" width="244.2" height="54" fill="var(--sig, #1F6F8B)" opacity="0.85"/>
-  <rect x="744.4" y="226" width="15.6" height="54" fill="var(--heat, #C4351F)"/>
-  <rect x="160" y="226" width="600" height="54" fill="none" stroke="currentColor" stroke-width="1.4"/>
-
-  <text x="241" y="258" text-anchor="middle" font-size="12.5" font-weight="600" fill="currentColor">27.0%</text>
-  <text x="411.1" y="258" text-anchor="middle" font-size="12.5" font-weight="600" fill="currentColor">29.7%</text>
-  <text x="622.3" y="258" text-anchor="middle" font-size="12.5" font-weight="600" fill="currentColor">40.7%</text>
-
-  <path d="M752 226 L752 208 L800 208" fill="none" stroke="var(--heat, #C4351F)" stroke-width="1.2"/>
-  <text x="806" y="212" font-size="12" font-weight="600" fill="var(--heat, #C4351F)">2.6%</text>
-
-  <path d="M500.2 286 L500.2 296 L760 296 L760 286" fill="none" stroke="currentColor" stroke-width="1.3"/>
-  <text x="630.1" y="314" text-anchor="middle" font-size="13" font-weight="700" fill="currentColor">可觸及 43.3%</text>
-
-  <!-- shift arrow -->
-  <path d="M651.4 182 L651.4 196 L520 196 L520 216" fill="none" stroke="var(--sig, #1F6F8B)" stroke-width="1.6" stroke-dasharray="5 3"/>
-  <text x="612" y="210" text-anchor="end" font-size="11.5" font-weight="600" fill="var(--sig, #1F6F8B)">移除 effort 項 → 25 個百分點的熱搬進可觸及帶</text>
-
-  <!-- ================= bottom row ================= -->
-  <line x1="40" y1="338" x2="900" y2="338" stroke="currentColor" stroke-width="1" opacity="0.25"/>
-
-  <text x="40" y="362" font-size="12.5" font-weight="600" fill="currentColor">predictive filter 實際拿回：</text>
-
-  <text x="270" y="362" font-size="12" fill="currentColor">full reward</text>
-  <text x="270" y="384" font-size="17" font-weight="700" fill="var(--sig, #1F6F8B)">47%</text>
-  <text x="318" y="384" font-size="12" fill="currentColor" opacity="0.75">of 18.1%  →  H/H₀ = 0.915</text>
-
-  <text x="270" y="410" font-size="12" fill="currentColor">no effort terms</text>
-  <text x="390" y="410" font-size="17" font-weight="700" fill="var(--sig, #1F6F8B)">54%</text>
-  <text x="438" y="410" font-size="12" fill="currentColor" opacity="0.75">of 43.3%  →  H/H₀ = 0.765</text>
-
-  <text x="640" y="384" font-size="12" fill="currentColor" opacity="0.85">原始節省相差近三倍，回收「比例」卻穩定。</text>
-  <text x="640" y="402" font-size="12" fill="currentColor" opacity="0.85">量一次基線 rollout 的頻帶切分、把可觸及</text>
-  <text x="640" y="420" font-size="12" fill="currentColor" opacity="0.85">份額除以二，就能在動手前預估收益。</text>
+  <g id="axes_1">
+   <g id="patch_2">
+    <path d="M 29.593701 167.994 
+L 332.791763 167.994 
+L 332.791763 16.47 
+L 29.593701 16.47 
+z
+" style="fill: #ffffff"/>
+   </g>
+   <g id="matplotlib.axis_1">
+    <g id="xtick_1">
+     <g id="line2d_1">
+      <defs>
+       <path id="m5f08d48d5b" d="M 0 0 
+L 0 2.5 
+" style="stroke: #7d8894; stroke-width: 0.6"/>
+      </defs>
+      <g>
+       <use xlink:href="#m5f08d48d5b" x="29.593701" y="167.994" style="fill: #7d8894; stroke: #7d8894; stroke-width: 0.6"/>
+      </g>
+     </g>
+     <g id="text_1">
+      <text style="font-size: 7px; font-family: 'Source Sans 3', 'Helvetica', 'Arial', 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Avant Garde', sans-serif; text-anchor: middle; fill: #1a1a1a" x="29.593701" y="179.090191" transform="rotate(-0 29.593701 179.090191)">0</text>
+     </g>
+    </g>
+    <g id="xtick_2">
+     <g id="line2d_2">
+      <g>
+       <use xlink:href="#m5f08d48d5b" x="105.393216" y="167.994" style="fill: #7d8894; stroke: #7d8894; stroke-width: 0.6"/>
+      </g>
+     </g>
+     <g id="text_2">
+      <text style="font-size: 7px; font-family: 'Source Sans 3', 'Helvetica', 'Arial', 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Avant Garde', sans-serif; text-anchor: middle; fill: #1a1a1a" x="105.393216" y="179.090191" transform="rotate(-0 105.393216 179.090191)">25</text>
+     </g>
+    </g>
+    <g id="xtick_3">
+     <g id="line2d_3">
+      <g>
+       <use xlink:href="#m5f08d48d5b" x="181.192732" y="167.994" style="fill: #7d8894; stroke: #7d8894; stroke-width: 0.6"/>
+      </g>
+     </g>
+     <g id="text_3">
+      <text style="font-size: 7px; font-family: 'Source Sans 3', 'Helvetica', 'Arial', 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Avant Garde', sans-serif; text-anchor: middle; fill: #1a1a1a" x="181.192732" y="179.090191" transform="rotate(-0 181.192732 179.090191)">50</text>
+     </g>
+    </g>
+    <g id="xtick_4">
+     <g id="line2d_4">
+      <g>
+       <use xlink:href="#m5f08d48d5b" x="256.992247" y="167.994" style="fill: #7d8894; stroke: #7d8894; stroke-width: 0.6"/>
+      </g>
+     </g>
+     <g id="text_4">
+      <text style="font-size: 7px; font-family: 'Source Sans 3', 'Helvetica', 'Arial', 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Avant Garde', sans-serif; text-anchor: middle; fill: #1a1a1a" x="256.992247" y="179.090191" transform="rotate(-0 256.992247 179.090191)">75</text>
+     </g>
+    </g>
+    <g id="xtick_5">
+     <g id="line2d_5">
+      <g>
+       <use xlink:href="#m5f08d48d5b" x="332.791763" y="167.994" style="fill: #7d8894; stroke: #7d8894; stroke-width: 0.6"/>
+      </g>
+     </g>
+     <g id="text_5">
+      <text style="font-size: 7px; font-family: 'Source Sans 3', 'Helvetica', 'Arial', 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Avant Garde', sans-serif; text-anchor: middle; fill: #1a1a1a" x="332.791763" y="179.090191" transform="rotate(-0 332.791763 179.090191)">100</text>
+     </g>
+    </g>
+    <g id="text_6">
+     <text style="font-size: 7.4px; font-family: 'Source Sans 3', 'Helvetica', 'Arial', 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Avant Garde', sans-serif; text-anchor: middle; fill: #1a1a1a" x="181.192732" y="189.950738" transform="rotate(-0 181.192732 189.950738)">Share of copper loss (%)</text>
+    </g>
+   </g>
+   <g id="matplotlib.axis_2"/>
+   <g id="patch_3">
+    <path d="M 29.593701 52.83576 
+L 124.494694 52.83576 
+L 124.494694 34.65288 
+L 29.593701 34.65288 
+z
+" clip-path="url(#pd4e2a912aa)" style="fill: #c9d3dd; stroke: #ffffff; stroke-width: 0.8; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_4">
+    <path d="M 124.494694 52.83576 
+L 277.912913 52.83576 
+L 277.912913 34.65288 
+L 124.494694 34.65288 
+z
+" clip-path="url(#pd4e2a912aa)" style="fill: #8aa8c4; stroke: #ffffff; stroke-width: 0.8; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_5">
+    <path d="M 277.912913 52.83576 
+L 327.940594 52.83576 
+L 327.940594 34.65288 
+L 277.912913 34.65288 
+z
+" clip-path="url(#pd4e2a912aa)" style="fill: #d1603d; stroke: #ffffff; stroke-width: 0.8; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_6">
+    <path d="M 327.940594 52.83576 
+L 332.791763 52.83576 
+L 332.791763 34.65288 
+L 327.940594 34.65288 
+z
+" clip-path="url(#pd4e2a912aa)" style="fill: #f2b263; stroke: #ffffff; stroke-width: 0.8; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_7">
+    <path d="M 29.593701 117.99108 
+L 111.457177 117.99108 
+L 111.457177 99.8082 
+L 29.593701 99.8082 
+z
+" clip-path="url(#pd4e2a912aa)" style="fill: #c9d3dd; stroke: #ffffff; stroke-width: 0.8; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_8">
+    <path d="M 111.457177 117.99108 
+L 201.507002 117.99108 
+L 201.507002 99.8082 
+L 111.457177 99.8082 
+z
+" clip-path="url(#pd4e2a912aa)" style="fill: #8aa8c4; stroke: #ffffff; stroke-width: 0.8; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_9">
+    <path d="M 201.507002 117.99108 
+L 324.908613 117.99108 
+L 324.908613 99.8082 
+L 201.507002 99.8082 
+z
+" clip-path="url(#pd4e2a912aa)" style="fill: #d1603d; stroke: #ffffff; stroke-width: 0.8; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_10">
+    <path d="M 324.908613 117.99108 
+L 332.791763 117.99108 
+L 332.791763 99.8082 
+L 324.908613 99.8082 
+z
+" clip-path="url(#pd4e2a912aa)" style="fill: #f2b263; stroke: #ffffff; stroke-width: 0.8; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_11">
+    <path d="M 29.593701 167.994 
+L 332.791763 167.994 
+" style="fill: none; stroke: #7d8894; stroke-width: 0.6; stroke-linejoin: miter; stroke-linecap: square"/>
+   </g>
+   <g id="text_7">
+    <text style="font-weight: 700; font-size: 7.4px; font-family: 'Source Sans 3', 'Helvetica', 'Arial', 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Avant Garde', sans-serif; text-anchor: start; fill: #1a1a1a" x="29.593701" y="27.07668" transform="rotate(-0 29.593701 27.07668)">Full reward   ·   H(ZOH) = 255.9</text>
+   </g>
+   <g id="text_8">
+    <text style="font-weight: 700; font-size: 7px; font-family: 'Source Sans 3', 'Helvetica', 'Arial', 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Avant Garde', sans-serif; text-anchor: middle; fill: #1a1a1a" x="77.044197" y="47.077848" transform="rotate(-0 77.044197 47.077848)">31.3</text>
+   </g>
+   <g id="text_9">
+    <text style="font-weight: 700; font-size: 7px; font-family: 'Source Sans 3', 'Helvetica', 'Arial', 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Avant Garde', sans-serif; text-anchor: middle; fill: #1a1a1a" x="201.203804" y="47.077848" transform="rotate(-0 201.203804 47.077848)">50.6</text>
+   </g>
+   <g id="text_10">
+    <text style="font-weight: 700; font-size: 7px; font-family: 'Source Sans 3', 'Helvetica', 'Arial', 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Avant Garde', sans-serif; text-anchor: middle; fill: #ffffff" x="302.926753" y="47.077848" transform="rotate(-0 302.926753 47.077848)">16.5</text>
+   </g>
+   <g id="line2d_6">
+    <path d="M 330.366178 34.65288 
+L 330.366178 30.10716 
+" clip-path="url(#pd4e2a912aa)" style="fill: none; stroke: #4a4a4a; stroke-width: 0.55; stroke-linecap: square"/>
+   </g>
+   <g id="text_11">
+    <text style="font-size: 7px; font-family: 'Source Sans 3', 'Helvetica', 'Arial', 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Avant Garde', sans-serif; text-anchor: end; fill: #1a1a1a" x="332.791763" y="27.07668" transform="rotate(-0 332.791763 27.07668)">&gt;25 Hz  1.6%</text>
+   </g>
+   <g id="line2d_7">
+    <path d="M 277.912913 44.50194 
+L 277.912913 60.41196 
+L 332.791763 60.41196 
+L 332.791763 44.50194 
+" clip-path="url(#pd4e2a912aa)" style="fill: none; stroke: #d1603d; stroke-width: 0.9; stroke-linejoin: miter; stroke-linecap: square"/>
+   </g>
+   <g id="text_12">
+    <text style="font-weight: 700; font-size: 7px; font-family: 'Source Sans 3', 'Helvetica', 'Arial', 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Avant Garde', sans-serif; text-anchor: end; fill: #d1603d" x="332.791763" y="72.53388" transform="rotate(-0 332.791763 72.53388)">filter-reachable 18.1%</text>
+   </g>
+   <g id="text_13">
+    <text style="font-weight: 700; font-size: 7.4px; font-family: 'Source Sans 3', 'Helvetica', 'Arial', 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Avant Garde', sans-serif; text-anchor: start; fill: #1a1a1a" x="29.593701" y="92.232" transform="rotate(-0 29.593701 92.232)">No torque + energy   ·   H(ZOH) = 376.3  (+47%)</text>
+   </g>
+   <g id="text_14">
+    <text style="font-weight: 700; font-size: 7px; font-family: 'Source Sans 3', 'Helvetica', 'Arial', 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Avant Garde', sans-serif; text-anchor: middle; fill: #1a1a1a" x="70.525439" y="112.233168" transform="rotate(-0 70.525439 112.233168)">27.0</text>
+   </g>
+   <g id="text_15">
+    <text style="font-weight: 700; font-size: 7px; font-family: 'Source Sans 3', 'Helvetica', 'Arial', 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Avant Garde', sans-serif; text-anchor: middle; fill: #1a1a1a" x="156.48209" y="112.233168" transform="rotate(-0 156.48209 112.233168)">29.7</text>
+   </g>
+   <g id="text_16">
+    <text style="font-weight: 700; font-size: 7px; font-family: 'Source Sans 3', 'Helvetica', 'Arial', 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Avant Garde', sans-serif; text-anchor: middle; fill: #ffffff" x="263.207807" y="112.233168" transform="rotate(-0 263.207807 112.233168)">40.7</text>
+   </g>
+   <g id="line2d_8">
+    <path d="M 328.850188 99.8082 
+L 328.850188 95.26248 
+" clip-path="url(#pd4e2a912aa)" style="fill: none; stroke: #4a4a4a; stroke-width: 0.55; stroke-linecap: square"/>
+   </g>
+   <g id="text_17">
+    <text style="font-size: 7px; font-family: 'Source Sans 3', 'Helvetica', 'Arial', 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Avant Garde', sans-serif; text-anchor: end; fill: #1a1a1a" x="332.791763" y="92.232" transform="rotate(-0 332.791763 92.232)">&gt;25 Hz  2.6%</text>
+   </g>
+   <g id="line2d_9">
+    <path d="M 201.507002 109.65726 
+L 201.507002 125.56728 
+L 332.791763 125.56728 
+L 332.791763 109.65726 
+" clip-path="url(#pd4e2a912aa)" style="fill: none; stroke: #d1603d; stroke-width: 0.9; stroke-linejoin: miter; stroke-linecap: square"/>
+   </g>
+   <g id="text_18">
+    <text style="font-weight: 700; font-size: 7px; font-family: 'Source Sans 3', 'Helvetica', 'Arial', 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Avant Garde', sans-serif; text-anchor: end; fill: #d1603d" x="332.791763" y="137.6892" transform="rotate(-0 332.791763 137.6892)">filter-reachable 43.3%</text>
+   </g>
+   <g id="text_19">
+    <text style="font-size: 7px; font-family: 'Source Sans 3', 'Helvetica', 'Arial', 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Avant Garde', sans-serif; text-anchor: start; fill: #1a1a1a" x="29.593701" y="153.59922" transform="rotate(-0 29.593701 153.59922)">Removing the effort reward terms moves 25 percentage points of heat</text>
+   </g>
+   <g id="text_20">
+    <text style="font-size: 7px; font-family: 'Source Sans 3', 'Helvetica', 'Arial', 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Avant Garde', sans-serif; text-anchor: start; fill: #1a1a1a" x="29.593701" y="164.96352" transform="rotate(-0 29.593701 164.96352)">into the band a filter can reach.</text>
+   </g>
+   <g id="text_21">
+    <text style="font-weight: 700; font-size: 8px; font-family: 'Source Sans 3', 'Helvetica', 'Arial', 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Avant Garde', sans-serif; text-anchor: start; fill: #1a1a1a" x="12.593701" y="10.47" transform="rotate(-0 12.593701 10.47)">a</text>
+   </g>
+  </g>
+  <g id="axes_2">
+   <g id="patch_12">
+    <path d="M 367.827983 167.994 
+L 502.582677 167.994 
+L 502.582677 16.47 
+L 367.827983 16.47 
+z
+" style="fill: #ffffff"/>
+   </g>
+   <g id="matplotlib.axis_3">
+    <g id="xtick_6">
+     <g id="line2d_10">
+      <g>
+       <use xlink:href="#m5f08d48d5b" x="367.827983" y="167.994" style="fill: #7d8894; stroke: #7d8894; stroke-width: 0.6"/>
+      </g>
+     </g>
+     <g id="text_22">
+      <text style="font-size: 7px; font-family: 'Source Sans 3', 'Helvetica', 'Arial', 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Avant Garde', sans-serif; text-anchor: middle; fill: #1a1a1a" x="367.827983" y="179.090191" transform="rotate(-0 367.827983 179.090191)">0.7</text>
+     </g>
+    </g>
+    <g id="xtick_7">
+     <g id="line2d_11">
+      <g>
+       <use xlink:href="#m5f08d48d5b" x="403.762568" y="167.994" style="fill: #7d8894; stroke: #7d8894; stroke-width: 0.6"/>
+      </g>
+     </g>
+     <g id="text_23">
+      <text style="font-size: 7px; font-family: 'Source Sans 3', 'Helvetica', 'Arial', 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Avant Garde', sans-serif; text-anchor: middle; fill: #1a1a1a" x="403.762568" y="179.090191" transform="rotate(-0 403.762568 179.090191)">0.8</text>
+     </g>
+    </g>
+    <g id="xtick_8">
+     <g id="line2d_12">
+      <g>
+       <use xlink:href="#m5f08d48d5b" x="439.697153" y="167.994" style="fill: #7d8894; stroke: #7d8894; stroke-width: 0.6"/>
+      </g>
+     </g>
+     <g id="text_24">
+      <text style="font-size: 7px; font-family: 'Source Sans 3', 'Helvetica', 'Arial', 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Avant Garde', sans-serif; text-anchor: middle; fill: #1a1a1a" x="439.697153" y="179.090191" transform="rotate(-0 439.697153 179.090191)">0.9</text>
+     </g>
+    </g>
+    <g id="xtick_9">
+     <g id="line2d_13">
+      <g>
+       <use xlink:href="#m5f08d48d5b" x="475.631738" y="167.994" style="fill: #7d8894; stroke: #7d8894; stroke-width: 0.6"/>
+      </g>
+     </g>
+     <g id="text_25">
+      <text style="font-size: 7px; font-family: 'Source Sans 3', 'Helvetica', 'Arial', 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Avant Garde', sans-serif; text-anchor: middle; fill: #1a1a1a" x="475.631738" y="179.090191" transform="rotate(-0 475.631738 179.090191)">1.0</text>
+     </g>
+    </g>
+    <g id="text_26">
+     <text style="font-size: 7.4px; font-family: 'Source Sans 3', 'Helvetica', 'Arial', 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Avant Garde', sans-serif; text-anchor: middle; fill: #1a1a1a" x="435.20533" y="189.950738" transform="rotate(-0 435.20533 189.950738)">H / H0 after predictive filtering</text>
+    </g>
+   </g>
+   <g id="matplotlib.axis_4"/>
+   <g id="patch_13">
+    <path d="M 445.087341 52.83576 
+L 475.631738 52.83576 
+L 475.631738 34.65288 
+L 445.087341 34.65288 
+z
+" clip-path="url(#pcbc01a1ed9)" style="fill: #d1603d"/>
+   </g>
+   <g id="patch_14">
+    <path d="M 391.185463 117.99108 
+L 475.631738 117.99108 
+L 475.631738 99.8082 
+L 391.185463 99.8082 
+z
+" clip-path="url(#pcbc01a1ed9)" style="fill: #d1603d"/>
+   </g>
+   <g id="patch_15">
+    <path d="M 367.827983 167.994 
+L 475.631738 167.994 
+" style="fill: none; stroke: #7d8894; stroke-width: 0.6; stroke-linejoin: miter; stroke-linecap: square"/>
+   </g>
+   <g id="line2d_14">
+    <path d="M 475.631738 128.59776 
+L 475.631738 21.77334 
+" clip-path="url(#pcbc01a1ed9)" style="fill: none; stroke-dasharray: 2.4,1.6; stroke-dashoffset: 0; stroke: #1a1a1a; stroke-width: 0.8"/>
+   </g>
+   <g id="text_27">
+    <text style="font-size: 7px; font-family: 'Source Sans 3', 'Helvetica', 'Arial', 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Avant Garde', sans-serif; text-anchor: middle; fill: #4a4a4a" x="487.490151" y="76.32198" transform="rotate(-90 487.490151 76.32198)">H0 baseline = 1.00</text>
+   </g>
+   <g id="text_28">
+    <text style="font-weight: 700; font-size: 7.4px; font-family: 'Source Sans 3', 'Helvetica', 'Arial', 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Avant Garde', sans-serif; text-anchor: end; fill: #1a1a1a" x="442.212574" y="47.077848" transform="rotate(-0 442.212574 47.077848)">0.915</text>
+   </g>
+   <g id="text_29">
+    <text style="font-size: 7px; font-family: 'Source Sans 3', 'Helvetica', 'Arial', 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Avant Garde', sans-serif; text-anchor: start; fill: #1a1a1a" x="372.140133" y="27.07668" transform="rotate(-0 372.140133 27.07668)">47% of 18.1% recovered</text>
+   </g>
+   <g id="text_30">
+    <text style="font-weight: 700; font-size: 7.4px; font-family: 'Source Sans 3', 'Helvetica', 'Arial', 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Avant Garde', sans-serif; text-anchor: end; fill: #1a1a1a" x="388.310697" y="112.233168" transform="rotate(-0 388.310697 112.233168)">0.765</text>
+   </g>
+   <g id="text_31">
+    <text style="font-size: 7px; font-family: 'Source Sans 3', 'Helvetica', 'Arial', 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Avant Garde', sans-serif; text-anchor: start; fill: #1a1a1a" x="372.140133" y="92.232" transform="rotate(-0 372.140133 92.232)">54% of 43.3% recovered</text>
+   </g>
+   <g id="text_32">
+    <text style="font-size: 7px; font-family: 'Source Sans 3', 'Helvetica', 'Arial', 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Avant Garde', sans-serif; text-anchor: start; fill: #1a1a1a" x="372.140133" y="153.59922" transform="rotate(-0 372.140133 153.59922)">Raw savings differ by nearly 3×;</text>
+   </g>
+   <g id="text_33">
+    <text style="font-size: 7px; font-family: 'Source Sans 3', 'Helvetica', 'Arial', 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Avant Garde', sans-serif; text-anchor: start; fill: #1a1a1a" x="372.140133" y="164.96352" transform="rotate(-0 372.140133 164.96352)">the recovered fraction is stable.</text>
+   </g>
+   <g id="text_34">
+    <text style="font-weight: 700; font-size: 8px; font-family: 'Source Sans 3', 'Helvetica', 'Arial', 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Avant Garde', sans-serif; text-anchor: start; fill: #1a1a1a" x="350.827983" y="10.47" transform="rotate(-0 350.827983 10.47)">b</text>
+   </g>
+  </g>
+  <g id="legend_1">
+   <g id="patch_16">
+    <path d="M 99.510845 216.311819 
+L 108.610845 216.311819 
+L 108.610845 210.729319 
+L 99.510845 210.729319 
+z
+" style="fill: #c9d3dd; stroke: #ffffff; stroke-linejoin: miter"/>
+   </g>
+   <g id="text_35">
+    <text style="font-size: 7px; font-family: 'Source Sans 3', 'Helvetica', 'Arial', 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Avant Garde', sans-serif; text-anchor: start; fill: #1a1a1a" x="112.110845" y="215.944319" transform="rotate(-0 112.110845 215.944319)">DC (posture)</text>
+   </g>
+   <g id="patch_17">
+    <path d="M 162.673813 216.311819 
+L 171.773813 216.311819 
+L 171.773813 210.729319 
+L 162.673813 210.729319 
+z
+" style="fill: #8aa8c4; stroke: #ffffff; stroke-linejoin: miter"/>
+   </g>
+   <g id="text_36">
+    <text style="font-size: 7px; font-family: 'Source Sans 3', 'Helvetica', 'Arial', 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Avant Garde', sans-serif; text-anchor: start; fill: #1a1a1a" x="175.273813" y="215.944319" transform="rotate(-0 175.273813 215.944319)">0–5 Hz (gait)</text>
+   </g>
+   <g id="patch_18">
+    <path d="M 225.843345 216.311819 
+L 234.943345 216.311819 
+L 234.943345 210.729319 
+L 225.843345 210.729319 
+z
+" style="fill: #d1603d; stroke: #ffffff; stroke-linejoin: miter"/>
+   </g>
+   <g id="text_37">
+    <text style="font-size: 7px; font-family: 'Source Sans 3', 'Helvetica', 'Arial', 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Avant Garde', sans-serif; text-anchor: start; fill: #1a1a1a" x="238.443345" y="215.944319" transform="rotate(-0 238.443345 215.944319)">5–25 Hz (in-band jitter)</text>
+   </g>
+   <g id="patch_19">
+    <path d="M 320.13772 216.311819 
+L 329.23772 216.311819 
+L 329.23772 210.729319 
+L 320.13772 210.729319 
+z
+" style="fill: #f2b263; stroke: #ffffff; stroke-linejoin: miter"/>
+   </g>
+   <g id="text_38">
+    <text style="font-size: 7px; font-family: 'Source Sans 3', 'Helvetica', 'Arial', 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Avant Garde', sans-serif; text-anchor: start; fill: #1a1a1a" x="332.73772" y="215.944319" transform="rotate(-0 332.73772 215.944319)">&gt;25 Hz (ZOH harmonics)</text>
+   </g>
+  </g>
+ </g>
+ <defs>
+  <clipPath id="pd4e2a912aa">
+   <rect x="29.593701" y="16.47" width="303.198062" height="151.524"/>
+  </clipPath>
+  <clipPath id="pcbc01a1ed9">
+   <rect x="367.827983" y="16.47" width="134.754694" height="151.524"/>
+  </clipPath>
+ </defs>
 </svg>

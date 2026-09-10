@@ -1,2 +1,13 @@
+# built by build_page.py; the Artifact host supplies its own head wrapper
 paper-page.html
+
 __pycache__/
+
+# backups taken before in-place edits
+*.bak-*
+
+# regenerable QA artefacts: rerun figsrc/fig*.py to recreate
+figsrc/out/
+
+# local preview scaffolding
+.claude/
