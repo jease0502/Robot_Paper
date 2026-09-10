@@ -262,7 +262,7 @@ calibrated brushless actuators, the winding thermal time constant is 3.12\,s
 against 777\,s for the motor housing---a disparity factor of 249~\cite{maxon}.
 Because driver thermistors exhibit significant thermal lag relative to winding
 junctions, and because driver-reported temperature is itself the output of a
-model rather than a winding measurement~\cite{wallscheid,kirchgassner,thermalpred},
+model rather than a winding measurement~\cite{wallscheid,kirchgassner},
 current-based squared torque serves as the primary ground-truth
 metric~\cite{urs}. Minimizing $I^2R$ is likewise the drive-side statement of
 energy-efficient motor control~\cite{energymotor}.
@@ -777,34 +777,26 @@ sides respectively.
 \section{Related Work}
 
 \textbf{Thermal-aware locomotion.} Recent frameworks add motor temperature
-observations and thermal reward bounds, train thermal residual policies, or use
-contact-constrained inverse kinematics for multi-limbed humanoid thermal
-balancing~\cite{thermalaware,residual,jorgensen}. All require complete retraining;
+observations and thermal reward bounds, or train thermal residual
+policies~\cite{thermalaware,residual}. All require complete retraining;
 we instead characterize what a post-hoc intervention on a frozen checkpoint can
 and cannot do.
 
 \textbf{Command interfaces, smoothness, and control rate.} Interfaces bridging
 high-level commands and motor drives include actuator reality shaping,
-high-frequency torque interpolation, voltage-realizable acceleration bounds,
-action-chunk post-optimization, B-spline policy representations, and forward delay
-compensation~\cite{yamamori,kourdis,vra,lipo,bspline,weddington}. Manipulation
-meets the same interface from the other side: action chunking runs a slow policy
-above a fast controller~\cite{act} and receding-horizon diffusion execution makes
-the chunk boundary the analogue of the ZOH step~\cite{diffusion}. Where the
-actuator gap is treated as a modelling problem instead, the standard answers are
-domain randomization, online system identification, and folding actuator limits
-into training~\cite{domainrand,uposi,actconstrained}; all three require
-retraining. Smoothness is
-otherwise pursued during training, through CAPS, Lipschitz-constrained
-architectures and spectral
-normalization~\cite{caps,lipschitz,specnorm,benchmark}, through locally Lipschitz
-continuity constraints, redesigned smoothing regularizers, stabilized
-$Q$-gradient fields, and task-specified compliance
-bounds~\cite{l2c2,regsmooth,qgrad,compliancebounds}, while the control-rate
-literature reports robust locomotion at 8\,Hz, Q-learning degeneration as the time
-step shrinks, and policies that choose their own action
-durations~\cite{gangapurwala,tallec,tarc}, and the delayed-MDP literature maps
-where such latency can and cannot be absorbed~\cite{delaysurvey}. None of this
+high-frequency torque interpolation and voltage-realizable acceleration
+bounds~\cite{yamamori,kourdis,vra}. Manipulation meets the same interface from the
+other side: action chunking runs a slow policy above a fast
+controller~\cite{act}, and receding-horizon diffusion execution makes the chunk
+boundary the analogue of the ZOH step~\cite{diffusion}. Where the actuator gap is
+treated as a modelling problem instead, the standard answers are domain
+randomization and online system identification~\cite{domainrand,uposi}, both
+requiring retraining. Smoothness is otherwise pursued during training, through
+CAPS and Lipschitz-constrained architectures~\cite{caps,lipschitz}, while the
+control-rate literature reports robust locomotion at 8\,Hz and policies that
+choose their own action durations~\cite{gangapurwala,tarc}, and the delayed-MDP
+literature maps where such latency can and cannot be
+absorbed~\cite{delaysurvey}. None of this
 work measures physical
 copper loss or separates steady holding torque from command ripple, which is the
 gap addressed here.
@@ -939,11 +931,6 @@ W. Kirchg\"{a}ssner, O. Wallscheid, and J. B\"{o}cker, ``Estimating electric mot
 tem\-per\-a\-tures with deep resid\-ual ma\-chine learn\-ing,'' \emph{IEEE Trans. Power
 Electron.}, vol. 36, no. 7, pp. 7480--7488, 2021.
 
-\bibitem{thermalpred}
-T. K. La and E. G. Kaigom, ``Deep learning for model-free prediction of thermal
-states of robot joint motors,'' \emph{IFAC-PapersOnLine}, vol. 59, no. 18,
-pp. 211--216, 2025.
-
 \bibitem{urs}
 K. Urs, C. E. Adu, E. J. Rouse, and T. Y. Moore, ``Design and characterization of
 3D printed, open-source actuators for legged locomotion,'' in \emph{Proc.
@@ -1026,11 +1013,6 @@ policies for an electrically-actuated quadruped robot,'' arXiv:2603.01631, 2026.
 Y. Wan et al., ``Learning to balance motor thermal safety and quadrupedal
 locomotion performance with residual policy,'' arXiv:2605.27046, 2026.
 
-\bibitem{jorgensen}
-S. J. Jorgensen, J. Holley, F. Mathis, J. S. Mehling, and L. Sentis, ``Thermal
-re\-cov\-ery of multi-limbed ro\-bots with elec\-tric ac\-tu\-a\-tors,'' \emph{IEEE Robot.
-Autom. Lett.}, vol. 4, no. 2, pp. 1077--1084, 2019.
-
 \bibitem{yamamori}
 S. Yamamori et al., ``Actuator reality shaping for zero-shot sim-to-real robot
 learning,'' arXiv:2607.02205, 2026.
@@ -1042,19 +1024,6 @@ control,'' arXiv:2509.24175, 2025.
 \bibitem{vra}
 L. Zhang et al., ``Grounding discrete-time joint-level acceleration bounds in
 voltage-constrained actuation,'' in \emph{Proc. Robot., Sci. Syst. (RSS)}, 2026.
-
-\bibitem{lipo}
-D. Son and S. Park, ``LiPo: A lightweight post-optimization framework for
-smoothing action chunks generated by learned policies,'' \emph{Int. J. Control
-Autom. Syst.}, vol. 23, no. 11, pp. 3284--3292, 2025.
-
-\bibitem{bspline}
-X. Han et al., ``B-spline policy: Accelerating manipulation policies via B-spline
-action representations,'' arXiv:2607.09648, 2026.
-
-\bibitem{weddington}
-J. C. Weddington, B. P. \"{O}lveczky, and S. A. Baccus, ``Reinforcement learning
-on cost-constrained quadrupedal hardware,'' arXiv:2607.26434, 2026.
 
 \bibitem{act}
 T. Z. Zhao, V. Kumar, S. Levine, and C. Finn, ``Learning fine-grained bimanual
@@ -1077,11 +1046,6 @@ W. Yu, J. Tan, C. K. Liu, and G. Turk, ``Preparing for the unknown: Learning a
 universal policy with online system identification,'' in \emph{Proc. Robot., Sci.
 Syst. (RSS)}, 2017.
 
-\bibitem{actconstrained}
-Y.-H. Shin, T.-G. Song, G. Ji, and H.-W. Park, ``Reinforcement learning for
-high-speed quadrupedal locomotion with motor operating region constraints,''
-\emph{IEEE Robot. Autom. Mag.}, vol. 32, no. 2, pp. 49--59, 2025.
-
 \bibitem{caps}
 S. Mysore, B. Mabsout, R. Mancuso, and K. Saenko, ``Regularizing action policies
 for smooth control with reinforcement learning,'' in \emph{Proc. IEEE Int. Conf.
@@ -1092,43 +1056,10 @@ Z. Chen et al., ``Learning smooth humanoid locomotion through
 Lipschitz-constrained policies,'' in \emph{Proc. IEEE/RSJ Int. Conf. Intell.
 Robots Syst. (IROS)}, 2025, pp. 4743--4750.
 
-\bibitem{specnorm}
-J. Shin, W. Cha, D. Kim, J. Cha, and J. Park, ``Spectral normalization for
-Lipschitz-constrained policies on learning humanoid locomotion,''
-arXiv:2504.08246, 2025.
-
-\bibitem{benchmark}
-G. Christmann, Y.-S. Luo, H. Mandala, and W.-C. Chen, ``Benchmarking smoothness
-and reducing high-frequency oscillations in continuous control policies,'' in
-\emph{Proc. IEEE/RSJ Int. Conf. Intell. Robots Syst. (IROS)}, 2024,
-pp. 627--634.
-
-\bibitem{l2c2}
-T. Kobayashi, ``L2C2: Locally Lipschitz continuous constraint towards stable and
-smooth reinforcement learning,'' in \emph{Proc. IEEE/RSJ Int. Conf. Intell.
-Robots Syst. (IROS)}, 2022, pp. 4032--4039.
-
-\bibitem{regsmooth}
-T. Kobayashi and N. Yamanaka, ``Redesigning regularization for effective policy
-smoothing,'' arXiv:2606.13169, 2026.
-
-\bibitem{qgrad}
-J. W. Lee, K. Kwak, D. Kim, and H. Hwang, ``Stabilizing the Q-gradient field for
-policy smoothness in actor-critic methods,'' arXiv:2601.22970, 2026.
-
-\bibitem{compliancebounds}
-Z. He and Y. Nakamura, ``Task-specified compliance bounds for humanoids via
-Lipschitz-constrained policies,'' arXiv:2603.16180, 2026.
-
 \bibitem{gangapurwala}
 S. Gangapurwala, L. Campanaro, and I. Havoutis, ``Learning low-frequency motion
 control for robust and dynamic robot locomotion,'' in \emph{Proc. IEEE Int. Conf.
 Robot. Autom. (ICRA)}, 2023, pp. 5085--5091.
-
-\bibitem{tallec}
-C. Tallec, L. Blier, and Y. Ollivier, ``Making deep Q-learning methods robust to
-time discretization,'' in \emph{Proc. Int. Conf. Mach. Learn. (ICML)}, 2019,
-pp. 6096--6104.
 
 \bibitem{tarc}
 A. Sukhija, L. Treven, J. Cheng, F. D\"{o}rfler, S. Coros, and A. Krause, ``TARC:
