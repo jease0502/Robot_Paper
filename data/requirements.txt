@@ -1,0 +1,12 @@
+# Analysis tier: everything except the two closed-loop experiments.
+#
+# This covers 11 of the 13 scripts, including every one that reproduces a number
+# in the paper from the archived rollouts. It needs no GPU and no checkpoints.
+#
+#   python -m pip install -r requirements.txt
+#
+# Verified on 2026-09-11: Python 3.13.5 on Windows, with the versions pinned
+# below, reproduces Table II's seed-0 column and the E1 load sweep exactly.
+
+numpy==2.4.2
+matplotlib==3.11.0

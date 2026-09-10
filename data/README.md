@@ -15,6 +15,24 @@ data/
 Everything is simulation. There are no hardware measurements in this repository,
 and §8 of the manuscript says so.
 
+## Setting up
+
+Two tiers. The analysis tier reproduces every number in the paper and needs
+neither a GPU nor a checkpoint:
+
+```bash
+python -m pip install -r requirements.txt
+```
+
+Verified 2026-09-11 on Python 3.13.5: `analyze_command_spectrum.py` reproduces
+Table II's seed-0 column and `e1b_sim_load_sweep.py` the load sweep, both exactly.
+
+The closed-loop tier additionally needs a GPU, MuJoCo Playground and a trained
+checkpoint. See `requirements-gpu.txt`, which explains what pip can and cannot
+supply. The simulation environment itself is public --- `Go1JoystickFlatTerrain`
+from MuJoCo Playground's registry --- so the only genuinely missing piece is the
+checkpoints.
+
 ## Reproducing a result
 
 The scripts take the rollout directory from `ROLLOUT_ROOT`, so the archive is

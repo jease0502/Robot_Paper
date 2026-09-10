@@ -1,0 +1,39 @@
+# Closed-loop tier: e4_closed_loop.py and e5_torque_spectrum.py only.
+#
+#   python -m pip install -r requirements.txt -r requirements-gpu.txt
+#
+# UNPINNED ON PURPOSE. The environment these two scripts were originally run in
+# left no lockfile, and no version appears anywhere in the source or in
+# data/README.md. Pinning invented versions would be worse than leaving them
+# open: it would look like a record of what was used. If that environment still
+# exists, replace this file with `pip freeze` from it -- that is the only way
+# this becomes a record rather than a starting point.
+
+jax[cuda12]
+playground
+
+# `playground` is MuJoCo Playground. The import is `mujoco_playground` but the
+# distribution is `playground`; `pip install mujoco_playground` finds nothing
+# (PyPI 404). Confirmed against google-deepmind/mujoco_playground's own README
+# ("pip install playground") and the distribution's dependencies, which are
+# brax, jax, flax, absl-py, etils and lxml. brax and mujoco-mjx arrive with it,
+# so they are not listed separately.
+
+# --- what pip cannot install --------------------------------------------------
+#
+# THE SIMULATION ENVIRONMENT is not in this repository and does not need to be:
+# it is `Go1JoystickFlatTerrain`, loaded from MuJoCo Playground's public registry
+# (e4_closed_loop.py:57, :304-306). Installing `playground` is enough to get it.
+#
+# A GPU. data/README.md reports training at "about 6.6 minutes each on an RTX
+# 5080". That is Blackwell, compute capability sm_120, which needs CUDA 12.8 or
+# newer and a jaxlib built against it. An older jax[cuda12] wheel installs
+# without complaint and then fails at run time with a PTX/JIT error, so check
+# that `jax.devices()` returns a CudaDevice before assuming it worked.
+#
+# THE CHECKPOINTS. Passed as --params <run>/params.pkl, one per variant. These
+# are the piece that is genuinely missing: seven files, 1.7 MB each, described in
+# data/README.md as training artefacts rather than evidence. Regenerating them
+# means rerunning the reward ablation at 60M timesteps per variant. The rollouts
+# they produced ARE in the repository, and every table is computed from those, so
+# the analysis tier reproduces the paper without them.
