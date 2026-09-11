@@ -25,3 +25,6 @@ icra/main.pdf
 # scratch from the arXiv batch verification
 icra/_*.xml
 icra/_*.txt
+
+# Go1 model fetched by figsrc/fig6_variants.py from mujoco_menagerie
+figsrc/go1/

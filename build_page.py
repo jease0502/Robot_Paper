@@ -147,6 +147,18 @@ FIGS = {
         "predictive filter stays on it. This is the same comparison as Fig. 2 with time running. "
         "Web only &mdash; the submission figure set contains no animations.",
     ),
+    "FIG_VARIANTS": (
+        "gif",
+        "anim-variants.gif",
+        "Four reward-ablation policies replayed side by side, left to right: full "
+        "reward, no <code>action_rate</code>, no torque and energy, task terms only. "
+        "All four were recorded under the same command and the same 400 steps, so the "
+        "reward is the only difference. Nothing is re-simulated &mdash; these are the "
+        "archived <code>qpos</code> trajectories played back on the Go1 model. The "
+        "gaits look alike even at a 138% higher command-delta RMS, which is the point: "
+        "joint dynamics low-pass whatever the policy emits, so the waste shows up in "
+        "winding current rather than in the motion. Web only.",
+    ),
     "FIG3": (
         "svg",
         "fig3-band-budget.svg",

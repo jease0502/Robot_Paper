@@ -468,6 +468,23 @@ action smoothing, serves as the primary regularizer of command-side thermal load
 The same lever has been made adaptive to drive gait transition and locomotion
 efficiency~\cite{energyreg}.
 
+\begin{figure*}[!tb]
+\centering
+\includegraphics[width=0.92\textwidth]{figs/fig6-variants.pdf}
+\caption{Does the thermal difference show in the behaviour? Top: each variant's
+recorded pose at the same instant on the Go1 model; nothing is re-simulated, the
+frames replay the archived \texttt{qpos}. Bottom: the command that variant's
+policy emitted for one calf joint over the same two seconds. All four share the
+command $[0.5, 0, 0]$ and 400 steps, so the reward is the only difference. The
+gaits look alike while the command streams separate cleanly --- joint dynamics
+low-pass whatever the policy emits, which is why the heat appears in the winding
+current and not in the motion, and why a policy can look healthy while its
+actuators overheat. The \texttt{action\_rate} panel is indistinguishable from the
+baseline, matching the interval in Table~\ref{tab:ablation} that contains zero.}
+\label{fig:variants}
+\end{figure*}
+
+
 \subsection{Open-Loop Filtering and the Cost of Phase Lag}
 
 Replaying baseline trajectories through the unloaded single-joint model
